@@ -19,3 +19,5 @@ The remote change pulled down using this container was able to use the cached cr
 Returning these changes as a push, then I'll kill this container and see if the cache option is still working. :-)
 
 Now what are they in cache?
+
+Initial pull doesn't respect previous cache setting, but the subsequent push did. Makes me think the cache is torn down at the end of the container session?
