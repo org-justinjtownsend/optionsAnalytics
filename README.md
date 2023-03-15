@@ -21,3 +21,7 @@ Returning these changes as a push, then I'll kill this container and see if the 
 Now what are they in cache?
 
 Initial pull doesn't respect previous cache setting, but the subsequent push did. Makes me think the cache is torn down at the end of the container session?
+
+<!-- badges: start -->
+  [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+  <!-- badges: end -->
