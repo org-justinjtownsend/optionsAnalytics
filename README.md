@@ -7,3 +7,5 @@ This is a line from RStudio This is another line, just confirming my PAT is stor
 And another one, this will be GREAT!!
 
 And yet another are they stored this time?
+
+Now what, let's check?
