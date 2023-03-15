@@ -13,3 +13,7 @@ Now what, let's check?
 And let's just double-check?
 
 # An entry from the remote repo on GitHub.
+
+The remote change pulled down using this container was able to use the cached credentials for the pull.
+
+Returning these changes as a push, then I'll kill this container and see if the cache option is still working. :-)
