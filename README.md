@@ -17,3 +17,5 @@ And let's just double-check?
 The remote change pulled down using this container was able to use the cached credentials for the pull.
 
 Returning these changes as a push, then I'll kill this container and see if the cache option is still working. :-)
+
+Now what are they in cache?
