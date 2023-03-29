@@ -10,7 +10,8 @@ app_ui <- function(request) {
     golem_add_external_resources(),
     # Your application UI logic
     fluidPage(
-      h1("optionsAnalytics")
+      h1(get_golem_options("name")),
+      mod_getDatafromSource_ui("getDatafromSource_ui")
     )
   )
 }

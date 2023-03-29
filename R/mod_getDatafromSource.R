@@ -10,6 +10,14 @@
 mod_getDatafromSource_ui <- function(id){
   ns <- NS(id)
   tagList(
+    col_6(
+    tags$div(
+      align = "center",
+      tags$img(
+        src = "www/favicon.ico", width = "50%", align = "center"
+      )
+    )
+  )
  
   )
 }
