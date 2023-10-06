@@ -90,4 +90,4 @@ getOC <- function(x) {
   }
 }
 
-OC <- getOC ("AMZN")
+OC <- getOC ("%5ESPX")
