@@ -20,12 +20,12 @@
 ##
 golem::fill_desc(
   pkg_name = "optionsAnalytics", # The Name of the package containing the App
-  pkg_title = "PKG_TITLE", # The Title of the package containing the App
-  pkg_description = "PKG_DESC.", # The Description of the package containing the App
+  pkg_title = "Index Options Analytics", # The Title of the package containing the App
+  pkg_description = "A study of price / volatility behaviour amongst select index options analytics.", # The Description of the package containing the App
   author_first_name = "Justin", # Your First Name
   author_last_name = "Townsend", # Your Last Name
   author_email = "justinjtownsend@gmail.com", # Your Email
-  repo_url = https://github.com/justinjtownsend/optionsAnalytics, # The URL of the GitHub Repo (optional),
+  repo_url = "https://github.com/justinjtownsend/optionsAnalytics", # The URL of the GitHub Repo (optional),
   pkg_version = "0.0.0.9000" # The Version of the package containing the App
 )
 
@@ -37,7 +37,7 @@ golem::install_dev_deps()
 
 ## Create Common Files ----
 ## See ?usethis for more information
-usethis::use_mit_license("Golem User") # You can set another license here
+usethis::use_mit_license("Justin Townsend") # You can set another license here
 usethis::use_readme_rmd(open = FALSE)
 devtools::build_readme()
 # Note that `contact` is required since usethis version 2.1.5
