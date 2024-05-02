@@ -1,5 +1,5 @@
 # Index options analysis
-# Load SPX data
+# Load SPX data etc.
 
 # Libraries
 library("httr")
