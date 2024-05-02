@@ -42,7 +42,7 @@ SPX.QMOD <- SPX[SPX.KEEPS]
 # SQP.Q <- quantmod::as.quantmod.OHLC(SPX.QMOD, col.names = SPX.KEEPS)
 SPX.QMOD <- as.xts(SPX.QMOD)
 
-# Load SPX options
+# Load SPX options data
 ORATS_API_KEY <- Sys.getenv("ORATS_API_KEY")
 SPX.OPTS <- quantmod::getOptionChain("SPX",
                                      Exp = NULL,
