@@ -1,4 +1,4 @@
-#' helpers - more to come
+#' helpers cool.
 #'
 #' @description A fct function
 #'
