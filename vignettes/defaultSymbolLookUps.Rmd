@@ -1,0 +1,90 @@
+---
+title: "Options Analytics: Manage Symbols"
+author: "Justin Townsend"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Manage Symbols
+
+This document outlines the symbol (data) loading approach for the index instruments under analysis. This includes the underlying, as well as related, common listed derivatives.
+
+```{r indices}
+# List symbols
+
+
+
+
+summary(cars) # List of indices and number of observations, perhaps a summary?
+```
+
+
+
+
+```{r orats.side_by_side}
+opts.side_by_side.orats <- function(l, orats.extras = 0) {
+  
+  # Class should be a list
+  if (!is.list(l)) {
+    stop("Functions expects options expiries as a list. Confirm you are providing an object of list. :-)")
+  }
+  else {
+    
+    # Declare empty data frame
+    opts_side_by_side = data.frame()
+    
+    for (opts in 1:length(l)) {
+      
+      # Expiry string to date
+      expiry <- as.character(names(l[opts]))
+      
+      # Dynamic name for the expiry dataframe (list index based)
+      side_by_side <- paste0("side_by_side_", opts, sep = "")
+      
+      if (orats.extras == 0) {
+        
+        # Extracting options data frames
+        calls <- as.data.frame(l[[opts]]["call"])
+        puts <- as.data.frame(l[[opts]]["put"])
+        
+        # Side by side: calls / puts join
+        by <- dplyr::join_by(call.Ticker == put.Ticker, call.Strike == put.Strike)
+        side_by_side <- dplyr::full_join(calls, puts, by)
+        side_by_side$exp <- expiry
+        
+      } else {
+        
+        # Extracting options extra data frames
+        calls <- as.data.frame(l[[opts]]["call_extra"])
+        puts <- as.data.frame(l[[opts]]["put_extra"])
+        
+        # Side by side: calls / puts join
+        by <- dplyr::join_by(call_extra.ticker == put_extra.ticker, call_extra.strike == put_extra.strike)
+        side_by_side <- dplyr::full_join(calls, puts, by)
+        side_by_side$exp <- expiry
+        
+      }
+      
+      # Append expiry to existing expiries
+      opts_side_by_side <- dplyr::bind_rows(opts_side_by_side, side_by_side)
+    }
+    
+    return(opts_side_by_side)
+    
+  }
+}
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

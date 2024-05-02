@@ -3,9 +3,9 @@ library(shiny)
 library(DT)
 library(shinyWidgets)
 library(dplyr)
-source("R/getOptionsChainData.R")
+# source("R/getOptionsChainData.R")
 
-joined <- getOC("AMZN")
+# joined <- getOC("AMZN")
 
 ui <- fluidPage(
   titlePanel("title"),
@@ -20,7 +20,6 @@ ui <- fluidPage(
   ))
 )
 
-
 server <- function(input, output, session) {
   
   data <- reactive({
@@ -28,11 +27,12 @@ server <- function(input, output, session) {
   })  
   
   output$picker <- renderUI({
-    pickerInput(inputId = 'pick', 
-                label = '3. Choose variables', 
+    pickerInput(inputId = 'pick',
+                label = '3. Choose variables',
                 choices = colnames(data()),
                 options = list(`actions-box` = TRUE), multiple = TRUE)
   })
+  
   datasetInput <- eventReactive(input$view,{
     
     datasetInput <- data() %>% 
