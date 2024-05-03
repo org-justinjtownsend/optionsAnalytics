@@ -26,7 +26,7 @@ if (httr::http_type(response) == "application/json") {
   cat("Error while receiving data\n")
 }
 
-SPX <- fromJSON(SPX)
+SPX <- jsonlite::fromJSON(SPX)
 
 # Quantmod  "tidy conversion"
 rownames(SPX) <- SPX$date
@@ -40,7 +40,7 @@ SPX.KEEPS <- c("open",
 
 SPX.QMOD <- SPX[SPX.KEEPS]
 # SQP.Q <- quantmod::as.quantmod.OHLC(SPX.QMOD, col.names = SPX.KEEPS)
-SPX.QMOD <- as.xts(SPX.QMOD)
+SPX.QMOD <- xts::as.xts(SPX.QMOD)
 
 # Load SPX options data
 ORATS_API_KEY <- Sys.getenv("ORATS_API_KEY")
