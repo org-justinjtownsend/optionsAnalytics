@@ -1,14 +1,35 @@
-# Packages
-library(DT)
-library(ggridges)
-
-# Historical volatility
+#' Calculate the volatility of a series of prices (OHLC).
+#'
+#' @param vol.per A period (number) over which volatility is calculated.
+#' @param vol.method A calculation method (string) for the volatility.
+#' @param idx.ohlc An object which Open-High-Low-Close prices, convertible to xts.
+#'
+#' @return A object of the same class as OHLC or a vector (if try.xts fails) containing the chosen volatility estimator values.
+#' @export
+#'
+#' @examples
+#' idx.vol.real(20, "close", AAPL.OHLC)
+#' idx.vol.real(30, "garman.klass", SPX.OHLC)
+#' idx.vol.real(vol.per = 30, vol.method = "garman.klass", idx.ohlc = SPX.OHLC)
 idx.vol.real <- function(vol.per, vol.method, idx.ohlc) {
   idx <- TTR::volatility(idx.ohlc, n = vol.per, calc = vol.method, N = 252)
   return(idx)
 }
 
-# Historical volatilities
+#' Calculate multiple volatilities, using multiple methods over a series of prices (OHLC).
+#'
+#' @param vol.pers A numeric vector of (volatility) periods.
+#' @param vol.methods A character of (volatility) calculation methods.
+#' @param idx.ohlc An object which Open-High-Low-Close prices, convertible to xts.
+#'
+#' @return A data.frame of volatilities (one column per combination).
+#' @export
+#'
+#' @examples
+#' vols <- c(10, 20, 30)
+#' vols.methods <- c("close", "garman.klass", "parkinson")
+#' vols.real.all <- idx.vols.real(vols, vols.methods, SPX.OHLC)
+#' vols.real.all <- idx.vols.real(vol.pers = vols, vol.methods = vols.methods, idx.ohlc = SPX.OHLC)
 idx.vols.real <- function(vol.pers, vol.methods, idx.ohlc) {
   
   # vol.pers is a numeric vector
@@ -51,12 +72,17 @@ idx.vols.real <- function(vol.pers, vol.methods, idx.ohlc) {
 
 }
 
+
 vols <- c(10, 20, 30)
 vols.methods <- c("close", "garman.klass", "parkinson")
 vols.real.all <- idx.vols.real(vols, vols.methods, inx_raw)
 
 vols.real.all <- as.data.frame(vols.real.all)
 vols.real.all.cols <- colnames(vols.real.all)
+
+# Packages
+library(DT)
+library(ggridges)
 
 # xts method to combine chart series for vol, see: ...com
 
