@@ -123,4 +123,4 @@ names(SPX.L) <- c("SPX.OPTS.runDate",
                   "SPX.OPTS",
                   "SPX.VOLS.REAL")
 
-saveRDS(SPX.L, file = paste0(outDir, "/SPX.L"))
+saveRDS(SPX.L, file = paste0(getwd(), "/data-raw/2024-05-09_01:30/SPX.L"))
