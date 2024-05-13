@@ -72,6 +72,7 @@ idx.vols.real <- function(vol.pers, vol.methods, idx.ohlc) {
 
 }
 
+# Need a good way of incorporating the powerful message of the stacked visualisations below.
 
 vols <- c(10, 20, 30)
 vols.methods <- c("close", "garman.klass", "parkinson")
