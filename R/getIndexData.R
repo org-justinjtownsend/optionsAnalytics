@@ -8,7 +8,7 @@ library("quantmod")
 
 # Set run date and save location
 runDate <- format(Sys.time(), format = "%Y-%m-%d_%H:%M")
-outDir <- paste0(getwd(), "/optionsAnalytics/data-raw/", runDate)
+outDir <- paste0(getwd(), "/data-raw/", runDate)
 
 dir.create(outDir)
 
@@ -28,7 +28,7 @@ if (httr::http_type(response) == "application/json") {
 
 SPX <- jsonlite::fromJSON(SPX)
 
-# Quantmod  "tidy conversion"
+# Quantmod "tidy conversion"
 rownames(SPX) <- SPX$date
 
 SPX.KEEPS <- c("open",
@@ -123,4 +123,4 @@ names(SPX.L) <- c("SPX.OPTS.runDate",
                   "SPX.OPTS",
                   "SPX.VOLS.REAL")
 
-saveRDS(SPX.L, file = paste0(getwd(), "/data-raw/2024-05-09_01:30/SPX.L"))
+saveRDS(SPX.L, file = paste0(getwd(), "/data-raw/2024-05-11_01:30/SPX.L"))
