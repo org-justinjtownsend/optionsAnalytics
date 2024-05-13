@@ -17,7 +17,7 @@ The work supports my own decision-making in options calculation / trading. If yo
 
 # Thanks...
 
-This package draws on giants from the R/Finance community, so thanks goes to (Josh Ulrich)[https://github.com/joshuaulrich], of quantmod fame, and (Dirk Eddelbuettel)[https://github.com/eddelbuettel] for his RQuantLib package.
+This package draws on giants from the R/Finance community, so thanks goes to [Josh Ulrich](https://github.com/joshuaulrich), of quantmod fame, and [Dirk Eddelbuettel](https://github.com/eddelbuettel) for his RQuantLib package.
 
 <!-- badges: start -->
   [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
