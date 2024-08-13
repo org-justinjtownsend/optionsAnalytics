@@ -1,3 +1,9 @@
+#' volreal 
+#'
+#' @description Functions for realized volatility calculations.
+#'
+#' @noRd
+
 #' Calculate the volatility of a series of prices (OHLC).
 #'
 #' @param vol.per A period (number) over which volatility is calculated.
@@ -18,11 +24,11 @@ idx.vol.real <- function(vol.per, vol.method, idx.ohlc) {
 
 #' Calculate multiple volatilities, using multiple methods over a series of prices (OHLC).
 #'
-#' @param vol.pers A numeric vector of (volatility) periods.
-#' @param vol.methods A character of (volatility) calculation methods.
-#' @param idx.ohlc An object which Open-High-Low-Close prices, convertible to xts.
+#' @param vol.pers A numeric vector representing volatility periods.
+#' @param vol.methods A character vector indicating volatility calculation methods.
+#' @param idx.ohlc An object which contains Open-High-Low-Close prices, convertible to xts.
 #'
-#' @return A data.frame of volatilities (one column per combination).
+#' @return An xts object of volatilities (one column per combination).
 #' @export
 #'
 #' @examples
@@ -61,58 +67,9 @@ idx.vols.real <- function(vol.pers, vol.methods, idx.ohlc) {
   all_vols <- purrr::map2(vol.pers, vol.methods, idx.vol.real, idx.ohlc, .progress = FALSE)
   
   # Volatility parameters to column names
-  n <- length(all_vols)
-  for (i in seq_len(n)) {
-    base::colnames(all_vols[[i]]) <- vol.names[[i]]
-  }
-  
   all_vols <- base::do.call("merge", all_vols)
+  base::colnames(all_vols) <- vol.names
   
   return(all_vols)
-
+  
 }
-
-# Need a good way of incorporating the powerful message of the stacked visualisations below.
-
-vols <- c(10, 20, 30)
-vols.methods <- c("close", "garman.klass", "parkinson")
-vols.real.all <- idx.vols.real(vols, vols.methods, inx_raw)
-
-vols.real.all <- as.data.frame(vols.real.all)
-vols.real.all.cols <- colnames(vols.real.all)
-
-# Packages
-library(DT)
-library(ggridges)
-
-# xts method to combine chart series for vol, see: ...com
-
-vols.real.all <- tidyr::pivot_longer(vols.real.all, cols = vols.real.all.cols, names_to = "vols", values_to = "vals")
-
-vols.real.all %>%
-  group_by(vols) %>%
-  mutate(mean_vols = mean(vals)) %>%
-  ggplot(aes(x = vals, y = reorder(vols, mean_vols), color = vols, fill = vols)) +
-  geom_boxplot(alpha = 0.3) +
-  theme_minimal() +
-  theme(legend.position = "none",
-        axis.title.y = element_blank()) +
-  ggtitle("Realized Volatility Distributions")
-
-vols.real.all %>%
-  group_by(vols) %>%
-  ggplot(aes(x = vals, color = vols, fill = vols)) +
-  geom_density(alpha = 0.15) +
-  theme_minimal() +
-  theme(legend.position = "none") +
-  ggtitle("Realized Volatility Distributions") +
-  facet_wrap(~vols)
-
-vols.real.all %>%
-  group_by(vols) %>%
-  mutate(mean_vols = mean(vals)) %>%
-  ggplot(aes(x = vals, y = reorder(vols, mean_vols), color = vols, fill = vols)) +
-  geom_density_ridges(alpha = 0.15) +
-  theme_minimal() +
-  theme(legend.position = "none") +
-  ggtitle("Realized Volatility Distributions")

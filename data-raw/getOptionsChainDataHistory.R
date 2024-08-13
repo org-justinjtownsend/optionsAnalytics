@@ -1,12 +1,13 @@
+# Rename the file to be consistent with a naming convention. Which is?
 # 1. Setup options ----
 ORATS_BASEURL <- "https://api.orats.io"
 orats.api.key <- Sys.getenv("ORATS_API_KEY")
 
 # 1.1 Date ranges ----
-orats.startDt <- as.Date("2018-04-01",
+orats.startDt <- as.Date("2024-04-27",
         format = "%Y-%m-%d")
 
-orats.endDt <- as.Date("2019-03-31",
+orats.endDt <- as.Date("2024-07-12",
                          format = "%Y-%m-%d")
 
 # 1.2 Business calendar ----
@@ -72,3 +73,17 @@ orats.opt.hist.all <- purrr::map(businessDts,
                                  ~orats.opts.hist(.x, token = orats.api.key,
                                                   ticker = orats.ticker)
                                  )
+
+opts.chk.2 <- readRDS(paste0(getwd(), '/data-raw/2024-07-11/', 'spx.opts.df'))
+
+path = paste0(getwd(),"/data-raw")
+pattern = "(spx.opts.df)"
+
+opts_files <- list.files(path=path, pattern=pattern, all.files = FALSE, full.names = TRUE,
+            recursive = TRUE)
+
+all_opts <- opts_files %>% purrr::map_dfr(readRDS)
+
+tbl <-
+  list.files(path=path, pattern=pattern, recursive=TRUE) %>% 
+  purrr::map_df(~data.frame(x=.x),.id="id")

@@ -26,6 +26,8 @@ golem::add_module(name = "name_of_module2", with_test = TRUE) # Name of the modu
 ## Add helper functions ----
 ## Creates fct_* and utils_*
 golem::add_fct("helpers", with_test = TRUE)
+golem::add_fct("volreal", with_test = TRUE)
+golem::add_fct("volimpl", with_test = TRUE)
 golem::add_utils("helpers", with_test = TRUE)
 
 ## External resources
@@ -37,7 +39,9 @@ golem::add_sass_file("custom")
 
 ## Add internal datasets ----
 ## If you have data in your package
-usethis::use_data_raw(name = "spx_raw", open = FALSE)
+usethis::use_data_raw(name = "inx_raw", open = FALSE)
+usethis::use_data_raw(name = "orats_spx_raw", open = TRUE)
+usethis::use_data_raw(name = "orats_spx_raw_qmod", open = TRUE)
 
 ## Tests ----
 ## Add one line by test you want to create

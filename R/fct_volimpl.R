@@ -1,17 +1,39 @@
-# Implied volatilities - why?
-#
-# IV doesn't always end-up matching RV, so we want to see where / why.
-# Why do we need to do this? To check an alternative scenario / path.
-# And to become SWIFTLY familiar with what a VOL number might be trying to tell you about the current state of MKT.
-# Historical options data (incl. IV at the time): [CHECK]
-# Alternative scenarios for IV (get all possibilities, see below), why?
-# Euan Sinclair book can give us an idea of why, e.g. prevailing characteristics in market at time?
-# At that point in time, would you have been thinking about the option IV differently, why?
+#' volimpl 
+#'
+#' @description Calculation of implied volatilities across maturities.
+#' 
+#' @details
+#' Implied volatility doesn't always end-up matching realized volatility,
+#' so we want to see where and investigate why. Prices can, probabilistically
+#' follow an alternate path.
+#' 
+#' And to become SWIFTLY familiar with what a VOL number might be trying to tell you about the current state of MKT.
+#' Historical options data (incl. IV at the time): [CHECK]
+#' Alternative scenarios for IV (get all possibilities, see below), why?
+#' Euan Sinclair book can give us an idea of why, e.g. prevailing characteristics in market at time?
+#' At that point in time, would you have been thinking about the option IV differently, why?
+#'
+#' @noRd
+
+
+
 # 
 # Map IVs to historical vols
 #
 # SPX / INX, UKX, YFS, XJO (where to go)
 
+
+#' idx.vols.impl - implied volatility calculation
+#'
+#' @param idx.orats 
+#' @param dividendYield 
+#' @param interestRate 
+#' @param vols 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 idx.vols.impl <- function(idx.orats, dividendYield = NULL, interestRate = NULL, vols = NULL) {
   
   # 1. Check named arguments, if NULL then assume values from orats dataset
@@ -30,7 +52,7 @@ idx.vols.impl <- function(idx.orats, dividendYield = NULL, interestRate = NULL, 
   if (is.null(vols)) {
     message(
       "Volatility (vols) not supplied, ORATs smvVol assumed. See ORATS for details: https://orats.com/docs/definitions"
-      )
+    )
   }
   
   # 2. Rundate - when the instance of THIS calculation was run (incl. seconds)
@@ -45,13 +67,13 @@ idx.vols.impl <- function(idx.orats, dividendYield = NULL, interestRate = NULL, 
   # 4. List maturities
   matList <- names(idx.orats)
   matList_len <- base::length(matList)
-
+  
   # 5. EOIV
   # For each maturity return:
   #   - price
   #     - greeks
   #   - IV at strike
-
+  
   for (i in matList_len) {
     ##########
     # Maturity
@@ -100,8 +122,8 @@ idx.vols.impl <- function(idx.orats, dividendYield = NULL, interestRate = NULL, 
                          riskFreeRate = ..4,
                          maturity = ..5,
                          volatility = ..6)$value
-                       )
       )
+    )
     
     # Implied Volatility
     callStrikes <- callStrikes %>% mutate(
@@ -115,9 +137,9 @@ idx.vols.impl <- function(idx.orats, dividendYield = NULL, interestRate = NULL, 
                            riskFreeRate = ..4,
                            maturity = ..5,
                            volatility = 0.4)
-                         )
       )
-
+    )
+    
     # Spot distance weighting factor
     a <- .25
     callStrikes$distanceFactor <- abs(1 - (callStrikes$strike / callStrikes$underlying))
@@ -214,12 +236,8 @@ idx.vols.impl <- function(idx.orats, dividendYield = NULL, interestRate = NULL, 
     putStrikes$compImplVol <- p_compImpl_Num / p_compImpl_Den
     
     return(list(mat = mat, call = callStrikes, put = putStrikes))
-    tst <- list(call = callStrikes, put = putStrikes)
     
     # mat = mat, - Got to here, 25/06/2024, 15:04.*****
   }
   
 }
-
-idx.orats <- SPX.OPTS
-
