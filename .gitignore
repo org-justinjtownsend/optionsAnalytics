@@ -6,6 +6,8 @@
 .Rdata
 .httr-oauth
 .DS_Store
+data-raw/*/
+data-raw/*.log
 inst/doc
 cert.pem
 privkey_name.pem

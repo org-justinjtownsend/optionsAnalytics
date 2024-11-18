@@ -9,7 +9,7 @@ db_user <- "justinjtownsend"
 ORATS_BASEURL <- "https://api.orats.io"
 orats.api.key <- Sys.getenv("ORATS_API_KEY")
 
-# 0.3 RQuantLib: Latest valid business date for ORATS extraction
+# 0.3 RQuantLib: Latest valid business date for ORATS extraction.
 startHour <- 2
 currentHour <- as.numeric(format(Sys.time(), format = "%H"))
 endDtTimeChk <- currentHour > startHour
