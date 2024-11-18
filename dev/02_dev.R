@@ -42,6 +42,8 @@ golem::add_sass_file("custom")
 usethis::use_data_raw(name = "inx_raw", open = FALSE)
 usethis::use_data_raw(name = "orats_spx_raw", open = TRUE)
 usethis::use_data_raw(name = "orats_spx_raw_qmod", open = TRUE)
+usethis::use_data_raw(name = "orats_spx_opts_raw", open = TRUE)
+usethis::use_data_raw(name = "orats_spx_corevol_raw", open = TRUE)
 
 ## Tests ----
 ## Add one line by test you want to create
@@ -71,9 +73,9 @@ usethis::use_github()
 usethis::use_github_action()
 # Chose one of the three
 # See https://usethis.r-lib.org/reference/use_github_action.html
-usethis::use_github_action_check_release()
+# usethis::use_github_action_check_release()
 usethis::use_github_action_check_standard()
-usethis::use_github_action_check_full()
+# usethis::use_github_action_check_full()
 # Add action for PR
 usethis::use_github_action_pr_commands()
 
@@ -90,10 +92,10 @@ usethis::use_circleci()
 usethis::use_circleci_badge()
 
 # Jenkins
-usethis::use_jenkins()
+# usethis::use_jenkins()
 
 # GitLab CI
-usethis::use_gitlab_ci()
+# usethis::use_gitlab_ci()
 
 # You're now set! ----
 # go to dev/03_deploy.R
