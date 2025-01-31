@@ -438,36 +438,38 @@ Justin Townsend
 <li><a href="https://www.joshuaulrich.com/">Josh Ulrich</a> of <a href="https://cran.r-project.org/web/packages/quantmod/index.html">quantmod</a> fame <sup>1</sup></li>
 <li><a href="https://dirk.eddelbuettel.com/">Dirk Eddelbuettel</a> for SOO much, but <a href="https://dirk.eddelbuettel.com/code/rquantlib.html">RQuantLib</a> is a favorite</li>
 </ul>
-<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource smaller number-lines code-with-copy"><code class="sourceCode"><span id="cb1-1"><a href="#cb1-1"></a>My Own Babysteps</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<aside><ol class="aside-footnotes"><li id="fn2"><p>Mild panic induced in me in January 2023 by <a href="https://github.com/joshuaulrich/quantmod/issues/407">Issue #407</a>, looks like I’ll need to pay for a data source. WOT? ;-O</p></li></ol></aside></section>
+<section id="my-own-babysteps" class="slide level2 smaller">
+<h2>My Own Babysteps</h2>
 <ul>
 <li>Quantmod produces a list of dataframes for core Calls and Puts data</li>
 </ul>
-<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="fu">library</span>(quantmod)</span>
-<span id="cb2-2"><a href="#cb2-2"></a></span>
-<span id="cb2-3"><a href="#cb2-3"></a>SPX.OPT <span class="ot">&lt;-</span> <span class="fu">getOptionChain</span>(<span class="st">"SPX"</span>, <span class="at">api.key =</span> <span class="fu">Sys.getenv</span>(<span class="st">"ORATS_API_KEY"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="fu">library</span>(quantmod)</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>SPX.OPT <span class="ot">&lt;-</span> <span class="fu">getOptionChain</span>(<span class="st">"SPX"</span>, <span class="at">api.key =</span> <span class="fu">Sys.getenv</span>(<span class="st">"ORATS_API_KEY"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <ul>
 <li><p>Toys out of pram moment, data not “side-by-side”, so I write my own <a href="https://gist.github.com/justinjtownsend/8c7175222118e2eec6a839de82c2957c">orats.functions</a></p>
 <ul>
 <li>Turns out “side-by-side” was available from the source endpoint…</li>
 </ul></li>
 </ul>
-<div class="sourceCode" id="cb3" data-code-line-numbers="10,11"><pre class="sourceCode numberSource R number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="fu">library</span>(polite)</span>
-<span id="cb3-2"><a href="#cb3-2"></a></span>
-<span id="cb3-3"><a href="#cb3-3"></a>orats.ticker <span class="ot">&lt;-</span> <span class="st">"SPX"</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>orats.tradeDate <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="fu">Sys.Date</span>())</span>
-<span id="cb3-5"><a href="#cb3-5"></a>orats.bow <span class="ot">&lt;-</span> <span class="fu">bow</span>(<span class="at">url =</span> ORATS_BASEURL, <span class="at">user_agent =</span> ORATS_USER,<span class="at">force =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb3-6"><a href="#cb3-6"></a>orats.session <span class="ot">&lt;-</span> polite<span class="sc">::</span><span class="fu">nod</span>(<span class="at">bow =</span> orats.bow,</span>
-<span id="cb3-7"><a href="#cb3-7"></a>    <span class="at">path =</span> <span class="fu">paste0</span>(</span>
-<span id="cb3-8"><a href="#cb3-8"></a>      <span class="st">"/datav2/hist/strikes?"</span>, <span class="st">"token="</span>, <span class="fu">Sys.getenv</span>(<span class="st">"ORATS_API_KEY"</span>), <span class="st">"&amp;ticker="</span>, orats.ticker,</span>
-<span id="cb3-9"><a href="#cb3-9"></a>      <span class="st">"&amp;tradeDate="</span>, orats.tradeDate</span>
-<span id="cb3-10"><a href="#cb3-10"></a>    )</span>
-<span id="cb3-11"><a href="#cb3-11"></a>  )</span>
-<span id="cb3-12"><a href="#cb3-12"></a></span>
-<span id="cb3-13"><a href="#cb3-13"></a>SPX.OPT <span class="ot">&lt;-</span> <span class="fu">scrape</span>(session, <span class="at">content =</span> <span class="st">"text/plain; charset=UTF-8"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb2" data-code-line-numbers="10,11"><pre class="sourceCode numberSource R number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="fu">library</span>(polite)</span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a>orats.ticker <span class="ot">&lt;-</span> <span class="st">"SPX"</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>orats.tradeDate <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="fu">Sys.Date</span>())</span>
+<span id="cb2-5"><a href="#cb2-5"></a>orats.bow <span class="ot">&lt;-</span> <span class="fu">bow</span>(<span class="at">url =</span> ORATS_BASEURL, <span class="at">user_agent =</span> ORATS_USER,<span class="at">force =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-6"><a href="#cb2-6"></a>orats.session <span class="ot">&lt;-</span> polite<span class="sc">::</span><span class="fu">nod</span>(<span class="at">bow =</span> orats.bow,</span>
+<span id="cb2-7"><a href="#cb2-7"></a>    <span class="at">path =</span> <span class="fu">paste0</span>(</span>
+<span id="cb2-8"><a href="#cb2-8"></a>      <span class="st">"/datav2/hist/strikes?"</span>, <span class="st">"token="</span>, <span class="fu">Sys.getenv</span>(<span class="st">"ORATS_API_KEY"</span>), <span class="st">"&amp;ticker="</span>, orats.ticker,</span>
+<span id="cb2-9"><a href="#cb2-9"></a>      <span class="st">"&amp;tradeDate="</span>, orats.tradeDate</span>
+<span id="cb2-10"><a href="#cb2-10"></a>    )</span>
+<span id="cb2-11"><a href="#cb2-11"></a>  )</span>
+<span id="cb2-12"><a href="#cb2-12"></a></span>
+<span id="cb2-13"><a href="#cb2-13"></a>SPX.OPT <span class="ot">&lt;-</span> <span class="fu">scrape</span>(session, <span class="at">content =</span> <span class="st">"text/plain; charset=UTF-8"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <ul>
 <li>Hey-ho, lesson learned… look harder!</li>
 </ul>
-<aside><ol class="aside-footnotes"><li id="fn2"><p>Mild panic induced in me in January 2023 by <a href="https://github.com/joshuaulrich/quantmod/issues/407">Issue #407</a>, looks like I’ll need to pay for a data source. WOT? ;-O</p></li></ol></aside></section>
+</section>
 <section id="not-quite-finished-here" class="slide level2 smaller">
 <h2>Not quite finished here…</h2>
 <ul>
@@ -477,9 +479,9 @@ Justin Townsend
 </ul></li>
 <li>Work around Quarto Issue <a href="https://github.com/quarto-dev/quarto-cli/issues/5998">#5998</a> with <a href="https://github.com/astefanutti/decktape">Decktape</a></li>
 </ul>
-<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource {{bash}} number-lines code-with-copy"><code class="sourceCode"><span id="cb4-1"><a href="#cb4-1"></a>npm install -g decktape</span>
-<span id="cb4-2"><a href="#cb4-2"></a></span>
-<span id="cb4-3"><a href="#cb4-3"></a>decktape reveal "GITHUB_PAGES_URL" "/path_to_output/FILE.pdf"</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource {{bash}} number-lines code-with-copy"><code class="sourceCode"><span id="cb3-1"><a href="#cb3-1"></a>npm install -g decktape</span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a>decktape reveal "GITHUB_PAGES_URL" "/path_to_output/FILE.pdf"</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 <div class="footer footer-default">
 <p><span class="math display">\[C = SN(d_1) − Ke{−rt} N(d_2)\]</span></p>
