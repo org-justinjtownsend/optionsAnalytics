@@ -1,0 +1,99 @@
+---
+title: "Derivatives & Options"
+subtitle: "A Journey to Efficient Analysis... [1]"
+author: "Justin Townsend"
+format:
+  revealjs:
+    toc: false
+    preview-links: true
+    slide-number: true
+    footer: $$C = SN(d_1) − Ke{−rt} N(d_2)$$
+editor: visual
+---
+
+## Who Am I?
+
+Quarto is great for sharing my train of thought...
+
+You can find me on [LinkedIn](https://www.linkedin.com/in/justin-j-townsend/) and [X / Twitter](https://x.com/justinjtownsend)
+
+I tend to like the things I like.
+
+## What interests me on the side? {.smaller}
+
+-   I'm a regular user of [R](https://www.r-project.org/) since \~2016
+-   It's the welcoming community, especially the R/Finance [^1] community...
+-   Which has allowed me to make uncountable mistakes along the way
+
+[^1]: R/Finance is now the Open Source Quantitative Finance community [OSQF](https://www.osqf.org/)
+
+SO I've stuck with it and not deviated too much.
+
+### BUT...
+
+-   I use R for other topics TOO, particularly sports analysis
+
+## An Options Analytics journey begins... {.smaller}
+
+Thanks to my brother and the purchase of [Sheldon Natenberg's, Option Volatility & Pricing 2nd Edition](https://www.amazon.co.uk/Option-Volatility-Pricing-Strategies-Techniques/dp/155738486X/ref=tmm_hrd_swatch_0) in May of 2008 for getting me started.
+
+Thanks to [Marcos Lopez Del Prado, Advances In Financial Machine Learning](https://www.amazon.co.uk/Advances-Financial-Machine-Learning-Marcos/dp/1119482089/ref=sr_1_2_sspa) purchased March of 2019 and [Euan Sinclair, Volatility Trading](https://www.amazon.co.uk/Volatility-Trading-Website-Wiley/dp/1118347137/ref=sr_1_1) purchased May of 2022 for keeping my interest up.
+
+And thanks to my derivatives professor Dr. Igor Makarov, now at [LSE](https://www.lse.ac.uk/finance/people/faculty/Makarov)...
+
+## Experience with the FinTwit Community {.smaller}
+
+I find FinTwit it a bit overwhelming, but FWIW my own honor roll of generally exceptional contributors:
+
+[\@bennpeifert](https://x.com/bennpeifert), [\@choffstein](https://x.com/choffstein), [\@jasonbuck](https://x.com/jasoncbuck), [\@therobotjames](https://x.com/therobotjames), [\@WifeyAlpha](https://x.com/WifeyAlpha), [\@Ksidiii](https://x.com/Ksidiii), [\@macrocephalopod](https://x.com/macrocephalopod), [\@BurggrabenH](https://x.com/BurggrabenH), [\@INArteCarloDoss](https://x.com/INArteCarloDoss), [\@Gingfacekillah](https://x.com/Gingfacekillah), [\@SinclairEuan](https://x.com/SinclairEuan)
+
+## Giants of R in Finance {.smaller}
+
+From time-to-time you want to translate all those research ideas into R code and discover your own mispricings.
+
+Thanks to giants in this space including...
+
+-   [Josh Ulrich](https://www.joshuaulrich.com/) of [quantmod](https://cran.r-project.org/web/packages/quantmod/index.html) fame [^2]
+-   [Dirk Eddelbuettel](https://dirk.eddelbuettel.com/) for SOO much, but [RQuantLib](https://dirk.eddelbuettel.com/code/rquantlib.html) is a favorite
+
+[^2]: Mild panic induced in me in January 2023 by [Issue #407](https://github.com/joshuaulrich/quantmod/issues/407), looks like I'll need to pay for a data source. WOT? 🤷‍♂️
+
+## My Own Babysteps {.smaller}
+
+-   Quantmod produces a list of dataframes for core Calls and Puts data
+
+``` r
+library(quantmod)
+
+SPX.OPT <- getOptionChain("SPX", api.key = Sys.getenv("ORATS_API_KEY"))
+```
+
+-   Toys out of pram moment, data not "side-by-side", so I write my own [orats.functions](https://gist.github.com/justinjtownsend/8c7175222118e2eec6a839de82c2957c)
+
+    -   Turns out "side-by-side" was available from the source endpoint...
+
+``` {.R code-line-numbers="10,11"}
+library(polite)
+
+orats.ticker <- "SPX"
+orats.tradeDate <- as.character(Sys.Date())
+orats.bow <- bow(url = ORATS_BASEURL, user_agent = ORATS_USER,force = TRUE)
+orats.session <- polite::nod(bow = orats.bow,
+    path = paste0(
+      "/datav2/hist/strikes?", "token=", Sys.getenv("ORATS_API_KEY"), "&ticker=", orats.ticker,
+      "&tradeDate=", orats.tradeDate
+    )
+  )
+
+SPX.OPT <- scrape(session, content = "text/plain; charset=UTF-8")
+```
+
+-   Hey-ho, lesson learned... look harder!
+
+## Not quite finished here... {.smaller}
+
+Chrome PDF engine clips footnotes and a mystery blank page is added to the end, so...
+
+``` javascript
+npm install -g decktape
+```

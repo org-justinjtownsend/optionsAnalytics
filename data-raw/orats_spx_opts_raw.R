@@ -74,7 +74,7 @@ orats.opts.hist <- function(tradeDate, token, ticker, bow = orats.bow) {
   ticker <- ticker
   token <- token
   
-  print(paste0(tradeDate, ": Starting call for ticker: ", ticker))
+  print(paste0(Sys.time(), ": loading ", ticker, ", for ", tradeDate, "."))
   
   session <- polite::nod(
     bow = orats.bow,
@@ -119,11 +119,30 @@ orats.opt.hist.all <- purrr::map(businessDts,
 # Load to DB ONLY the files retrieved in the run.
 path = paste0(getwd(),"/data-raw/")
 opts_files <- paste0(path, businessDts, "/spx.opts.rda")
-
 opts_hist_load <- function(fn) {
+  
+  f_name <- fn
+  f_dir <- basename(dirname(f_name))
   
   fn <- readRDS(fn)
   fn <- as.data.frame(fn)
+  
+  fn_lastrow <- fn[nrow(fn), ]
+  
+  fn_tradeDate <- fn_lastrow$tradeDate
+  fn_quoteDate <- fn_lastrow$quoteDate
+  fn_updatedAt <- fn_lastrow$updatedAt
+  
+  fn_load_chk <- as.data.frame(
+    cbind(
+      load_time = as.character(Sys.time()),
+      filename = f_name,
+      directory = f_dir,
+      tradeDate = fn_tradeDate,
+      quoteDate = fn_quoteDate,
+      updatedAt = fn_updatedAt
+    )
+  )
   
   con <- dbConnect(drv, dbname = "oa_indexes",
                    host = "localhost", port = 5432,
@@ -132,20 +151,19 @@ opts_hist_load <- function(fn) {
   on.exit(dbDisconnect(con))
   
   dbWriteTable(con, "opts_hist", fn, append = TRUE)
+  dbWriteTable(con, "opts_load_hist", fn_load_chk, append = TRUE)
   
 }
 
 purrr::map(opts_files, opts_hist_load, .progress = "Loading options data")
 
 # 4. Take most recent sample for loading in the package. ----
-
 latestBusinessDt <- as.character(businessDts[length(businessDts)])
 
 orats_spx_opts_raw <- RPostgreSQL::dbGetQuery(
   con,
   statement = paste0(
     'select',
-    '"row.names", ',
     '"ticker", ',
     '"tradeDate", ',
     '"expirDate", ',
