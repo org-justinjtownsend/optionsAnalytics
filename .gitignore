@@ -6,6 +6,8 @@
 .Rdata
 .httr-oauth
 .DS_Store
+*.log
+_hist
 data-raw/*/
 data-raw/*.log
 inst/doc
