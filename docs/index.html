@@ -438,13 +438,13 @@ Justin Townsend
 <li><a href="https://www.joshuaulrich.com/">Josh Ulrich</a> of <a href="https://cran.r-project.org/web/packages/quantmod/index.html">quantmod</a> fame <sup>1</sup></li>
 <li><a href="https://dirk.eddelbuettel.com/">Dirk Eddelbuettel</a> for SOO much, but <a href="https://dirk.eddelbuettel.com/code/rquantlib.html">RQuantLib</a> is a favorite</li>
 </ul>
-<aside><ol class="aside-footnotes"><li id="fn2"><p>Mild panic induced in me in January 2023 by <a href="https://github.com/joshuaulrich/quantmod/issues/407">Issue #407</a>, looks like I’ll need to pay for a data source. WOT? 🤷‍♂️</p></li></ol></aside></section>
+<aside><ol class="aside-footnotes"><li id="fn2"><p>Mild panic induced in me in January 2023 by <a href="https://github.com/joshuaulrich/quantmod/issues/407">Issue #407</a>, looks like I’ll need to pay for a data source. WOT? ;-O</p></li></ol></aside></section>
 <section id="my-own-babysteps" class="slide level2 smaller">
 <h2>My Own Babysteps</h2>
 <ul>
 <li>Quantmod produces a list of dataframes for core Calls and Puts data</li>
 </ul>
-<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="fu">library</span>(quantmod)</span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource R number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="fu">library</span>(quantmod)</span>
 <span id="cb1-2"><a href="#cb1-2"></a></span>
 <span id="cb1-3"><a href="#cb1-3"></a>SPX.OPT <span class="ot">&lt;-</span> <span class="fu">getOptionChain</span>(<span class="st">"SPX"</span>, <span class="at">api.key =</span> <span class="fu">Sys.getenv</span>(<span class="st">"ORATS_API_KEY"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <ul>
@@ -472,8 +472,13 @@ Justin Townsend
 </section>
 <section id="not-quite-finished-here" class="slide level2 smaller">
 <h2>Not quite finished here…</h2>
-<p>Chrome PDF engine clips footnotes and a mystery blank page is added to the end, so…</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource javascript number-lines code-with-copy"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1"></a>npm install <span class="op">-</span>g decktape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li>Default PDF engine clips footnotes and a mystery blank page is added to the end, so…
+<ul>
+<li>Publish the site out to <a href="https://quarto.org/docs/publishing/github-pages.html">GitHub Pages</a></li>
+</ul></li>
+<li>Work around Quarto Issue <a href="https://github.com/quarto-dev/quarto-cli/issues/5998">#5998</a> with <a href="https://github.com/astefanutti/decktape">Decktape</a></li>
+</ul>
 
 <div class="footer footer-default">
 <p><span class="math display">\[C = SN(d_1) − Ke{−rt} N(d_2)\]</span></p>
