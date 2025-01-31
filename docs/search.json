@@ -1,0 +1,51 @@
+[
+  {
+    "objectID": "optionsAnalytics.html#who-am-i",
+    "href": "optionsAnalytics.html#who-am-i",
+    "title": "Derivatives & Options",
+    "section": "Who Am I?",
+    "text": "Who Am I?\nQuarto is great for sharing my train of thought…\nYou can find me on LinkedIn and X / Twitter\nI tend to like the things I like."
+  },
+  {
+    "objectID": "optionsAnalytics.html#what-interests-me-on-the-side",
+    "href": "optionsAnalytics.html#what-interests-me-on-the-side",
+    "title": "Derivatives & Options",
+    "section": "What interests me on the side?",
+    "text": "What interests me on the side?\n\nI’m a regular user of R since ~2016\nIt’s the welcoming community, especially the R/Finance 1 community…\nWhich has allowed me to make uncountable mistakes along the way\n\nSO I’ve stuck with it and not deviated too much.\nBUT…\n\nI use R for other topics TOO, particularly sports analysis\n\nR/Finance is now the Open Source Quantitative Finance community OSQF"
+  },
+  {
+    "objectID": "optionsAnalytics.html#an-options-analytics-journey-begins",
+    "href": "optionsAnalytics.html#an-options-analytics-journey-begins",
+    "title": "Derivatives & Options",
+    "section": "An Options Analytics journey begins…",
+    "text": "An Options Analytics journey begins…\nThanks to my brother and the purchase of Sheldon Natenberg’s, Option Volatility & Pricing 2nd Edition in May of 2008 for getting me started.\nThanks to Marcos Lopez Del Prado, Advances In Financial Machine Learning purchased March of 2019 and Euan Sinclair, Volatility Trading purchased May of 2022 for keeping my interest up.\nAnd thanks to my derivatives professor Dr. Igor Makarov, now at LSE…"
+  },
+  {
+    "objectID": "optionsAnalytics.html#experience-with-the-fintwit-community",
+    "href": "optionsAnalytics.html#experience-with-the-fintwit-community",
+    "title": "Derivatives & Options",
+    "section": "Experience with the FinTwit Community",
+    "text": "Experience with the FinTwit Community\nI find FinTwit it a bit overwhelming, but FWIW my own honor roll of generally exceptional contributors:\n@bennpeifert, @choffstein, @jasonbuck, @therobotjames, @WifeyAlpha, @Ksidiii, @macrocephalopod, @BurggrabenH, @INArteCarloDoss, @Gingfacekillah, @SinclairEuan"
+  },
+  {
+    "objectID": "optionsAnalytics.html#giants-of-r-in-finance",
+    "href": "optionsAnalytics.html#giants-of-r-in-finance",
+    "title": "Derivatives & Options",
+    "section": "Giants of R in Finance",
+    "text": "Giants of R in Finance\nFrom time-to-time you want to translate all those research ideas into R code and discover your own mispricings.\nThanks to giants in this space including…\n\nJosh Ulrich of quantmod fame 1\nDirk Eddelbuettel for SOO much, but RQuantLib is a favorite\n\nMild panic induced in me in January 2023 by Issue #407, looks like I’ll need to pay for a data source. WOT? ;-O"
+  },
+  {
+    "objectID": "optionsAnalytics.html#my-own-babysteps",
+    "href": "optionsAnalytics.html#my-own-babysteps",
+    "title": "Derivatives & Options",
+    "section": "My Own Babysteps",
+    "text": "My Own Babysteps\n\nQuantmod produces a list of dataframes for core Calls and Puts data\n\nlibrary(quantmod)\n\nSPX.OPT <- getOptionChain(\"SPX\", api.key = Sys.getenv(\"ORATS_API_KEY\"))\n\nToys out of pram moment, data not “side-by-side”, so I write my own orats.functions\n\nTurns out “side-by-side” was available from the source endpoint…\n\n\nlibrary(polite)\n\norats.ticker <- \"SPX\"\norats.tradeDate <- as.character(Sys.Date())\norats.bow <- bow(url = ORATS_BASEURL, user_agent = ORATS_USER,force = TRUE)\norats.session <- polite::nod(bow = orats.bow,\n    path = paste0(\n      \"/datav2/hist/strikes?\", \"token=\", Sys.getenv(\"ORATS_API_KEY\"), \"&ticker=\", orats.ticker,\n      \"&tradeDate=\", orats.tradeDate\n    )\n  )\n\nSPX.OPT <- scrape(session, content = \"text/plain; charset=UTF-8\")\n\nHey-ho, lesson learned… look harder!"
+  },
+  {
+    "objectID": "optionsAnalytics.html#not-quite-finished-here",
+    "href": "optionsAnalytics.html#not-quite-finished-here",
+    "title": "Derivatives & Options",
+    "section": "Not quite finished here…",
+    "text": "Not quite finished here…\n\nDefault PDF engine clips footnotes and a mystery blank page is added to the end, so…\n\nPublish the site out to GitHub Pages\n\nWork around Quarto Issue #5998 with Decktape\n\nnpm install -g decktape\n\ndecktape reveal \"GITHUB_PAGES_URL\" \"/path_to_output/FILE.pdf\"\n\n\n\\[C = SN(d_1) − Ke{−rt} N(d_2)\\]"
+  }
+]

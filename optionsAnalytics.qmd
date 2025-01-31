@@ -6,9 +6,10 @@ format:
   revealjs:
     toc: false
     preview-links: true
+    progress: true
     slide-number: true
     footer: $$C = SN(d_1) − Ke{−rt} N(d_2)$$
-editor: visual
+editor: source
 ---
 
 ## Who Am I?
@@ -56,10 +57,9 @@ Thanks to giants in this space including...
 -   [Josh Ulrich](https://www.joshuaulrich.com/) of [quantmod](https://cran.r-project.org/web/packages/quantmod/index.html) fame [^2]
 -   [Dirk Eddelbuettel](https://dirk.eddelbuettel.com/) for SOO much, but [RQuantLib](https://dirk.eddelbuettel.com/code/rquantlib.html) is a favorite
 
-[^2]: Mild panic induced in me in January 2023 by [Issue #407](https://github.com/joshuaulrich/quantmod/issues/407), looks like I'll need to pay for a data source. WOT? 🤷‍♂️
+[^2]: Mild panic induced in me in January 2023 by [Issue #407](https://github.com/joshuaulrich/quantmod/issues/407), looks like I'll need to pay for a data source. WOT? ;-O
 
 ## My Own Babysteps {.smaller}
-
 -   Quantmod produces a list of dataframes for core Calls and Puts data
 
 ``` r
@@ -92,8 +92,12 @@ SPX.OPT <- scrape(session, content = "text/plain; charset=UTF-8")
 
 ## Not quite finished here... {.smaller}
 
-Chrome PDF engine clips footnotes and a mystery blank page is added to the end, so...
+-   Default PDF engine clips footnotes and a mystery blank page is added to the end, so...
+    -   Publish the site out to [GitHub Pages](https://quarto.org/docs/publishing/github-pages.html)
+-   Work around Quarto Issue [#5998](https://github.com/quarto-dev/quarto-cli/issues/5998) with [Decktape](https://github.com/astefanutti/decktape)
 
-``` javascript
+```{{bash}}
 npm install -g decktape
+
+decktape reveal "GITHUB_PAGES_URL" "/path_to_output/FILE.pdf"
 ```
