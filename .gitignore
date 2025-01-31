@@ -14,3 +14,4 @@ inst/doc
 cert.pem
 privkey_name.pem
 *.Rprofvis
+/.quarto/
