@@ -1,35 +1,28 @@
-# Load required packages
-if (!requireNamespace("RPostgreSQL", quietly = TRUE)) {
-  stop("Package 'RPostgreSQL' needed for this script to work. Please install it.",
-       call. = FALSE)
-}
-if (!requireNamespace("DBI", quietly = TRUE)) {
-  stop("Package 'DBI' needed for this script to work. Please install it.",
-       call. = FALSE)
-}
-if (!requireNamespace("polite", quietly = TRUE)) {
-  stop("Package 'polite' needed for this script to work. Please install it.",
-       call. = FALSE)
-}
-if (!requireNamespace("jsonlite", quietly = TRUE)) {
-  stop("Package 'jsonlite' needed for this script to work. Please install it.",
-       call. = FALSE)
-}
-if (!requireNamespace("RQuantLib", quietly = TRUE)) {
-  stop("Package 'RQuantLib' needed for this script to work. Please install it.",
-       call. = FALSE)
-}
-if (!requireNamespace("purrr", quietly = TRUE)) {
-  stop("Package 'purrr' needed for this script to work. Please install it.",
-       call. = FALSE)
-}
-if (!requireNamespace("usethis", quietly = TRUE)) {
-  stop("Package 'usethis' needed for this script to work. Please install it.",
-       call. = FALSE)
+# 0.1 Load required packages. ----
+# These packages are needed here because they support creating objects in the /data directory.
+load_package <- function(pkg) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    stop(sprintf("Package '%s' needed for this script to work. Please install it.", pkg),
+         call. = FALSE)
+  } else {
+    message(sprintf("Package '%s' loaded successfully.", pkg))
+  }
 }
 
-# Setup logging
-setup_logging <- function() {
+load_package("RPostgreSQL")
+load_package("DBI")
+load_package("polite")
+load_package("jsonlite")
+load_package("RQuantLib")
+load_package("purrr")
+load_package("usethis")
+
+# 0.2 Setup logging. ----
+# This function sets up logging to a file and the console.
+# It creates a log directory if it doesn't exist, and writes log messages to both the console and the log file.
+# It might be a good idea to have a silent mode (not log to the console) because the file may be called
+# externally by RScript in a CRON job and the output will be sent to a log file only.
+setup_logging <- function(silent = FALSE) {
   log_dir <- file.path(getwd(), "logs")
   if (!dir.exists(log_dir)) {
     dir.create(log_dir, recursive = TRUE)
@@ -43,7 +36,9 @@ setup_logging <- function() {
     timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
     formatted_msg <- sprintf("[%s] %s: %s", timestamp, level, msg)
     writeLines(formatted_msg, log_con)
-    print(formatted_msg)
+    if (!silent) {
+      print(formatted_msg)
+    }
   }
   
   return(list(
@@ -52,11 +47,17 @@ setup_logging <- function() {
   ))
 }
 
-# Initialize logging
-logger <- setup_logging()
+# Initialize logging with silent mode option
+logger <- setup_logging(silent = FALSE)
 log <- logger$log_message
 
-# 0.1 OA_INDEXES: Local DB options
+# Example of using different log levels
+log("This is a debug message", "DEBUG")
+log("This is a warning message", "WARNING")
+
+# 0.3 OA_INDEXES: Local DB options. ----
+# This section is used to connect to the local database and retrieve the latest load dates.
+# The database connection details will eventually go back into the .Renviron file in the package root.
 drv <- DBI::dbDriver("PostgreSQL")
 db_user <- "justinjtownsend"
 db_pw <- "Welcome!"  # Hardcoded for testing
@@ -65,16 +66,23 @@ db_port <- 5432
 db_name <- "oa_indexes"
 db_schema <- "opts_hist"
 
-# 0.2 ORATS: Web data source options.
+# 0.4 ORATS: Web data source options. ----
+# This section is used to provide the ORATS API set-up details.
+# It could maybe also be moved back into the .Renviron file in the package root.
 ORATS_BASEURL <- "https://api.orats.io"
 orats.api.key <- Sys.getenv("ORATS_API_KEY")
 
-# 0.3 RQuantLib: Latest valid business date for ORATS extraction.
+# 0.5 RQuantLib: Latest valid business date for ORATS extraction. ----
+# This section is used to check the current time and set the start and end date for the ORATS API extraction.
+# The function must check the time when it starts, given the time difference between the ORATS API and the local database.
+# This affects which business dates are retrieved.
 startHour <- 2
 currentHour <- as.numeric(format(Sys.time(), format = "%H"))
 endDtTimeChk <- currentHour > startHour
 
 # 1. Latest load dates (Local DB). ----
+# This section is used to retrieve the latest load dates from the local database.
+# It is a function that takes a database connection as an argument.
 opts_latest_loadDates <- function(con) {
   tryCatch({
     latest_loadDates <- RPostgreSQL::dbGetQuery(
@@ -94,7 +102,10 @@ opts_latest_loadDates <- function(con) {
   })
 }
 
-# Test database connection and get latest load dates
+# 1.1 Test database connection and get latest load dates. ----
+# This section is used to test the database connection and retrieve the latest load dates.
+# Importantly, if the script cannot connect to the database, it will stop and not continue.
+# It should report the error and stop.
 log("Attempting to connect to database...")
 latest_loadDates <- tryCatch({
   con <- DBI::dbConnect(drv, 
@@ -117,7 +128,9 @@ log(paste("Latest trade date:", latest_loadDates$latesttradedate))
 log(paste("Latest quote date:", latest_loadDates$latestquotedate))
 log(paste("Latest update date:", latest_loadDates$latestupdatedate))
 
-# 2. Business days (RQuantLib calendar). ----
+# 1.2 Business days (RQuantLib calendar). ----
+# Gathers ONLY the business days between the latest load dates and today.
+# This is because the ORATS API only has data for the business days.
 orats.startDt <- max(as.Date(latest_loadDates$latestquotedate),
                     as.Date(latest_loadDates$latestupdatedate),
                     as.Date(latest_loadDates$latesttradedate))
@@ -145,7 +158,14 @@ log(paste(head(businessDts), collapse = ", "))
 log("Last few business days:")
 log(paste(tail(businessDts), collapse = ", "))
 
-# 3. Most recent options (ORATS). ----
+# 2.1 Most recent options from ORATS. ----
+# This section is used to retrieve the most recent options from the ORATS API.
+# It is a function that takes a trade date as an argument.
+# It uses the ORATS API to retrieve the options data for the given trade date.
+# It then saves the data to the data-raw directory.
+# It also logs the data to the console.
+# It also logs the data to the log file.
+# It also logs the data to the database.
 orats.ticker <- "SPX"
 
 orats.bow <- polite::bow(
@@ -224,7 +244,7 @@ tryCatch({
   }
 })
 
-# Only continue with database operations if we have any successful results
+# 2.2 ORATS API retrieval successful, only THEN continue with database operations. ----# If we have any successful results, then continue with database operations.
 if (exists("orats.opt.hist.all") && length(orats.opt.hist.all) > 0) {
   # Load to DB ONLY the files retrieved in the run.
   path = paste0(getwd(),"/data-raw/")
@@ -271,11 +291,12 @@ if (exists("orats.opt.hist.all") && length(orats.opt.hist.all) > 0) {
       log(sprintf("Error loading data from %s to database: %s", f_name, err$message), "ERROR")
     })
   }
-
+# 2.3 Load the data to the database. ----
+# It's important to log the progress of these files, since sometimes multiple days load may happen at once.
   log("Starting database load of retrieved files")
   purrr::map(opts_files, opts_hist_load, .progress = "Loading options data")
 
-  # 4. Take most recent sample for loading in the package. ----
+# 3.1 Take most recent sample for loading into the package. ----
   latestBusinessDt <- as.character(businessDts[length(businessDts)])
 
   log(sprintf("Retrieving latest data for %s from database", latestBusinessDt))
@@ -343,6 +364,25 @@ if (exists("orats.opt.hist.all") && length(orats.opt.hist.all) > 0) {
     stop(err)
   })
 }
+
+# 0.6 Setup Pushover notification using pushoverr. ----
+# This function sends a notification to Pushover using the pushoverr library.
+send_pushover_notification <- function(message, title = "Script Notification", priority = 0) {
+  pushoverr::set_pushover_app(Sys.getenv("PUSHOVER_APP_TOKEN"))
+  pushoverr::set_pushover_user(Sys.getenv("PUSHOVER_USER_KEY"))
+  
+  pushoverr::pushover(message = message, title = title, priority = priority)
+}
+
+# At the end of the script, send a notification of success or failure
+tryCatch({
+  # If the script completes successfully
+  send_pushover_notification("The script completed successfully.", "Script Success")
+}, error = function(err) {
+  # If an error occurs
+  send_pushover_notification(paste("The script failed with error:", err$message), "Script Failure", priority = 1)
+  stop(err)
+})
 
 # Close log file
 close(logger$log_con)
