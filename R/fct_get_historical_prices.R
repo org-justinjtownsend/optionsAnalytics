@@ -4,6 +4,8 @@
 #' @param from Start date for historical data (default: 1000 days ago)
 #' @param to End date for historical data (default: today)
 #' @param src Data source (default: "yahoo")
+#' @param write_to_db Whether to write the data to the database (default: FALSE)
+#' @param get_all_history Whether to get all available history when writing to database for the first time (default: TRUE)
 #' @return An xts object containing the historical price data
 #' @export
 #'
@@ -15,10 +17,15 @@
 #' spx_data <- get_historical_prices("^GSPC", 
 #'                                  from = "2020-01-01", 
 #'                                  to = "2024-03-18")
+#'
+#' # Get data and write to database
+#' spx_data <- get_historical_prices("^GSPC", write_to_db = TRUE)
 get_historical_prices <- function(symbol,
                                 from = Sys.Date() - 1000,
                                 to = Sys.Date(),
-                                src = "yahoo") {
+                                src = "yahoo",
+                                write_to_db = FALSE,
+                                get_all_history = TRUE) {
   
   # Input validation
   if (!is.character(symbol)) {
@@ -29,8 +36,14 @@ get_historical_prices <- function(symbol,
   if (is.character(from)) from <- as.Date(from)
   if (is.character(to)) to <- as.Date(to)
   
+  # If writing to database and getting all history, set from date to a very early date
+  if (write_to_db && get_all_history) {
+    from <- as.Date("1900-01-01")
+  }
+  
   # Download the data
   tryCatch({
+    message(paste("Downloading data for", symbol, "from", from, "to", to))
     data <- quantmod::getSymbols(symbol,
                                 src = src,
                                 from = from,
@@ -40,6 +53,52 @@ get_historical_prices <- function(symbol,
     # Check if we got any data
     if (nrow(data) == 0) {
       stop(paste("No data returned for symbol:", symbol))
+    }
+    
+    message(paste("Successfully downloaded", nrow(data), "rows of data"))
+    message("Column names in data:")
+    message(paste(colnames(data), collapse = ", "))
+    
+    # If writing to database, create table if it doesn't exist and write data
+    if (write_to_db) {
+      message("Connecting to database...")
+      # Connect to database
+      drv <- DBI::dbDriver("PostgreSQL")
+      con <- DBI::dbConnect(drv,
+                           dbname = "oa_indexes",
+                           host = "localhost",
+                           port = 5432,
+                           user = "justinjtownsend",
+                           password = Sys.getenv("PGSQL_PW"),
+                           options = "-c search_path=opts_hist")
+      
+      on.exit(DBI::dbDisconnect(con))
+      
+      # Create schema if it doesn't exist
+      DBI::dbExecute(con, "CREATE SCHEMA IF NOT EXISTS opts_hist")
+      
+      message("Converting data for database storage...")
+      # Convert xts to data frame and prepare for database
+      df <- data.frame(
+        symbol = symbol,
+        date = format(index(data), "%Y-%m-%d"),
+        open = as.numeric(data[, paste0(gsub("\\^", "", symbol), ".Open")]),
+        high = as.numeric(data[, paste0(gsub("\\^", "", symbol), ".High")]),
+        low = as.numeric(data[, paste0(gsub("\\^", "", symbol), ".Low")]),
+        close = as.numeric(data[, paste0(gsub("\\^", "", symbol), ".Close")]),
+        volume = as.numeric(data[, paste0(gsub("\\^", "", symbol), ".Volume")]),
+        adjusted = as.numeric(data[, paste0(gsub("\\^", "", symbol), ".Adjusted")])
+      )
+      
+      message("Writing data to database...")
+      # Write data to database using dbWriteTable
+      DBI::dbWriteTable(con, 
+                       "price_hist", 
+                       df, 
+                       row.names = FALSE,
+                       append = TRUE)
+      
+      message("Successfully wrote data to database")
     }
     
     return(data)
