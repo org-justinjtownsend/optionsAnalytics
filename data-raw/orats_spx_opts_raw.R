@@ -80,6 +80,15 @@ startHour <- 2
 currentHour <- as.numeric(format(Sys.time(), format = "%H"))
 endDtTimeChk <- currentHour > startHour
 
+# 0.6 Setup Pushover notification using pushoverr. ----
+# This function sends a notification to Pushover using the pushoverr library.
+send_pushover_notification <- function(message, title = "Script Notification", priority = 0) {
+  pushoverr::set_pushover_app(Sys.getenv("PUSHOVER_APP_TOKEN"))
+  pushoverr::set_pushover_user(Sys.getenv("PUSHOVER_USER_KEY"))
+  
+  pushoverr::pushover(message = message, title = title, priority = priority)
+}
+
 # 1. Latest load dates (Local DB). ----
 # This section is used to retrieve the latest load dates from the local database.
 # It is a function that takes a database connection as an argument.
@@ -365,19 +374,17 @@ if (exists("orats.opt.hist.all") && length(orats.opt.hist.all) > 0) {
   })
 }
 
-# 0.6 Setup Pushover notification using pushoverr. ----
-# This function sends a notification to Pushover using the pushoverr library.
-send_pushover_notification <- function(message, title = "Script Notification", priority = 0) {
-  pushoverr::set_pushover_app(Sys.getenv("PUSHOVER_APP_TOKEN"))
-  pushoverr::set_pushover_user(Sys.getenv("PUSHOVER_USER_KEY"))
-  
-  pushoverr::pushover(message = message, title = title, priority = priority)
-}
-
-# At the end of the script, send a notification of success or failure
+# 3.2 At the end of the script, send a notification of success or failure. ----
+# Make sure the title is informative and includes the latestBusinessDt : orats.ticker.
+# Make sure the message is informative and includes the number of rows loaded to the package
+# and the timestamp of the load.
 tryCatch({
   # If the script completes successfully
-  send_pushover_notification("The script completed successfully.", "Script Success")
+  rows_loaded <- nrow(orats_spx_opts_raw)
+  timestamp <- Sys.time()
+  title <- sprintf("Success: %s - %s", latestBusinessDt, orats.ticker)
+  message <- sprintf("Successfully loaded %d rows to the package at %s.", rows_loaded, timestamp)
+  send_pushover_notification(message, title)
 }, error = function(err) {
   # If an error occurs
   send_pushover_notification(paste("The script failed with error:", err$message), "Script Failure", priority = 1)
@@ -386,4 +393,3 @@ tryCatch({
 
 # Close log file
 close(logger$log_con)
-
