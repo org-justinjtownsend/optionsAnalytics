@@ -17,12 +17,14 @@
 #'   - putBidPrice: numeric
 #'   - putAskPrice: numeric
 #' @param dte Integer or vector of integers specifying days to expiry
-#' @param dist Integer specifying the exact range between strike prices
+#' @param dist Integer or vector of integers specifying the exact range between strike prices
 #' @param callPos Integer or character specifying the column position/name for call prices
 #' @param putPos Integer or character specifying the column position/name for put prices
 #' @param vsType Character vector specifying vertical spread type(s): "lcs", "scs", "lps", "sps"
 #' @param output_file Optional path to save results as CSV
-#' @return A data frame containing the vertical spread information
+#' @return A named list containing:
+#'   - optionsData: Original input data frame
+#'   - vsData: Data frame containing vertical spread information
 #' @export
 create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsType, output_file = NULL) {
   # Input validation
@@ -96,38 +98,80 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
       next
     }
     
-    # Find valid strike pairs
-    for (i in 1:(nrow(dte_data)-1)) {
-      for (j in (i+1):nrow(dte_data)) {
-        strike_diff <- abs(dte_data$strike[j] - dte_data$strike[i])
-        if (strike_diff == dist) {
-          # Create new row for each spread type
-          for (type in vsType) {
-            new_row <- data.frame(
-              dte = days,
-              vsType = type,
-              vsValue = 0,  # Will be calculated below
-              callValL = dte_data[i, callPos],
-              callValH = dte_data[j, callPos],
-              putValL = dte_data[i, putPos],
-              putValH = dte_data[j, putPos],
-              strikeL = min(dte_data$strike[i], dte_data$strike[j]),
-              strikeH = max(dte_data$strike[i], dte_data$strike[j]),
-              spreadDist = dist
-            )
+    # Process each dist value for current dte
+    for (dist_val in dist) {
+      # Find valid strike pairs for current dist
+      for (i in 1:(nrow(dte_data)-1)) {
+        for (j in (i+1):nrow(dte_data)) {
+          strike_diff <- abs(dte_data$strike[j] - dte_data$strike[i])
+          if (strike_diff == dist_val) {
+            # Mark strike types
+            strikeL <- min(dte_data$strike[i], dte_data$strike[j])
+            strikeH <- max(dte_data$strike[i], dte_data$strike[j])
             
-            # Calculate vsValue based on spread type
-            if (type == "lcs") {
-              new_row$vsValue <- new_row$callValL - new_row$callValH
-            } else if (type == "scs") {
-              new_row$vsValue <- new_row$callValH - new_row$callValL
-            } else if (type == "lps") {
-              new_row$vsValue <- new_row$putValH - new_row$putValL
-            } else if (type == "sps") {
-              new_row$vsValue <- new_row$putValL - new_row$putValH
+            # Create new row for each spread type
+            for (type in vsType) {
+              # Determine instrument type and position type
+              instrType <- ifelse(type %in% c("lcs", "scs"), "c", "p")
+              posType <- ifelse(type %in% c("scs", "sps"), "cr_s", "dr_s")
+              
+              # Calculate vsValue based on spread type
+              vsValue <- 0
+              instrValL <- 0
+              instrValH <- 0
+              
+              if (type %in% c("lcs", "scs")) {
+                instrValL <- dte_data[i, callPos]
+                instrValH <- dte_data[j, callPos]
+                if (type == "lcs") {
+                  vsValue <- instrValL - instrValH
+                } else {  # scs
+                  vsValue <- instrValH - instrValL
+                }
+              } else {  # lps or sps
+                instrValL <- dte_data[i, putPos]
+                instrValH <- dte_data[j, putPos]
+                if (type == "lps") {
+                  vsValue <- instrValH - instrValL
+                } else {  # sps
+                  vsValue <- instrValL - instrValH
+                }
+              }
+              
+              # Calculate p_max based on spread type
+              p_max <- 0
+              if (type %in% c("lcs", "lps")) {
+                p_max <- dist_val - vsValue
+              } else {  # scs or sps
+                p_max <- vsValue
+              }
+              
+              # Calculate bep based on spread type
+              bep <- 0
+              if (type %in% c("lcs", "scs")) {
+                bep <- strikeL + vsValue
+              } else {  # lps or sps
+                bep <- strikeH - vsValue
+              }
+              
+              new_row <- data.frame(
+                dte = days,
+                vsType = type,
+                vsValue = vsValue,
+                instrValL = instrValL,
+                instrValH = instrValH,
+                strikeL = strikeL,
+                strikeH = strikeH,
+                dist = dist_val,
+                instrType = instrType,
+                posType = posType,
+                p_max = p_max,
+                bep = bep,
+                updated = Sys.time()
+              )
+              
+              result <- rbind(result, new_row)
             }
-            
-            result <- rbind(result, new_row)
           }
         }
       }
@@ -136,12 +180,12 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
   
   if (nrow(result) == 0) {
     warning("No valid vertical spreads found")
-    return(NULL)
+    return(list(optionsData = optionsData, vsData = NULL))
   }
   
   # Convert numeric columns
-  numeric_cols <- c("vsValue", "callValL", "callValH", "putValL", "putValH", 
-                   "strikeL", "strikeH", "spreadDist")
+  numeric_cols <- c("vsValue", "instrValL", "instrValH", 
+                   "strikeL", "strikeH", "dist", "p_max", "bep")
   for (col in numeric_cols) {
     result[[col]] <- as.numeric(result[[col]])
   }
@@ -156,5 +200,9 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
     })
   }
   
-  return(result)
+  # Return named list with original data and results
+  return(list(
+    optionsData = optionsData,
+    vsData = result
+  ))
 } 
