@@ -1,4 +1,8 @@
-## code to prepare `orats_spx_histvol_raw` dataset goes here
+## code to prepare `orats_spx_corevol_raw` dataset goes here
+## ORATS provides extensive calculations for vol as a guide
+## It might be used for testing assumptions.
+##
+## https://orats.com/docs/historical-data-api#core-data-history
 
 # 1. ORATS: Historical data extract function. ----
 orats.idx.corevol.hist <- function(token, ticker, bow = orats.bow) {

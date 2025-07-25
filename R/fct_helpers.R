@@ -10,10 +10,12 @@
 #'
 #' @description Extracts options data from the PostgreSQL database and returns it in a standardized format.
 #' This function connects to the database, queries the opts_hist table, and returns a data frame with
-#' standardized column names.
+#' standardized column names. The function is vectorized to efficiently handle multiple expiration dates
+#' using a single SQL query with an IN clause.
 #'
-#' @param expirDate Optional. The expiration date to filter by in 'YYYY-MM-DD' format as a character string.
-#' Example: expirDate <- as.character('2024-09-20'). If NULL, returns all expiration dates.
+#' @param expirDate Optional. A vector of expiration dates to filter by in 'YYYY-MM-DD' format as character strings.
+#' Example: expirDate <- c(as.character('2024-09-20'), as.character('2024-10-18')).
+#' If NULL, returns all expiration dates. The function is vectorized and uses an efficient SQL IN clause.
 #'
 #' @return A data frame containing the standardized options data with the following columns:
 #' \itemize{
@@ -53,12 +55,15 @@
 #' @examples
 #' \dontrun{
 #' # Get all options data
-#' options_data <- opt_extract_std()
+#' options_data <- opts_extract_std()
 #' 
 #' # Get options data for a specific expiration date
-#' options_data <- opt_extract_std(expirDate = as.character('2024-09-20'))
+#' options_data <- opts_extract_std(expirDate = as.character('2024-09-20'))
+#' 
+#' # Get options data for multiple expiration dates (vectorized)
+#' options_data <- opts_extract_std(expirDate = c(as.character('2024-09-20'), as.character('2024-10-18')))
 #' }
-opt_extract_std <- function(expirDate = NULL) {
+opts_extract_std <- function(expirDate = NULL) {
   # Load required packages
   if (!requireNamespace("DBI", quietly = TRUE)) {
     install.packages("DBI")
@@ -72,14 +77,16 @@ opt_extract_std <- function(expirDate = NULL) {
   
   # Validate expirDate format if provided
   if (!is.null(expirDate)) {
-    # Check if expirDate is a character
+    # Check if expirDate is a character vector
     if (!is.character(expirDate)) {
-      stop("expirDate must be a character string in 'YYYY-MM-DD' format")
+      stop("expirDate must be a character vector in 'YYYY-MM-DD' format")
     }
     
-    # Validate character format (YYYY-MM-DD)
-    if (!grepl("^\\d{4}-\\d{2}-\\d{2}$", expirDate)) {
-      stop("expirDate must be in 'YYYY-MM-DD' format as a character string")
+    # Validate character format (YYYY-MM-DD) for each element
+    for (date in expirDate) {
+      if (!grepl("^\\d{4}-\\d{2}-\\d{2}$", date)) {
+        stop("All expirDate elements must be in 'YYYY-MM-DD' format as character strings")
+      }
     }
   }
   
@@ -128,7 +135,11 @@ opt_extract_std <- function(expirDate = NULL) {
   
   # Add expiration date filter if provided
   if (!is.null(expirDate)) {
-    query <- paste0(base_query, " WHERE \"expirDate\" = '", expirDate, "'")
+    # Create IN clause for efficient vectorized querying
+    # Properly escape and quote each date for SQL safety
+    quoted_dates <- paste0("'", expirDate, "'")
+    in_clause <- paste(quoted_dates, collapse = ", ")
+    query <- paste0(base_query, " WHERE \"expirDate\" IN (", in_clause, ")")
   } else {
     query <- base_query
   }
@@ -296,5 +307,129 @@ opts_instrument_ig <- function(instrument, expiry_range, strike_price = 5500, op
     results[i, names(result)] <- result
   }
   return(results)
+}
+
+#' Extract Historical Options Data
+#'
+#' @description Retrieves historical options data for specified expiration dates with user-friendly limits.
+#' This function wraps around \code{opts_extract_std()} to provide historical analysis capabilities.
+#' It sorts results by expiration date and trade date, calculates available history, and returns
+#' the requested number of days of historical data.
+#'
+#' @param expirDate A vector of expiration dates to filter by in 'YYYY-MM-DD' format as character strings.
+#' Example: expirDate <- c(as.character('2024-09-20'), as.character('2024-10-18')).
+#' @param hist_days An integer specifying the number of days of history to retrieve.
+#' If the available history is less than hist_days, all available rows will be returned.
+#'
+#' @return A data frame containing historical options data with the same columns as \code{opts_extract_std()},
+#' sorted by expirDate and tradeDate in ascending order. The data is limited to the requested number
+#' of historical days.
+#'
+#' @details This function:
+#' \itemize{
+#'   \item Extracts data using \code{opts_extract_std()}
+#'   \item Sorts results by expirDate and tradeDate (ascending)
+#'   \item Calculates and reports the number of days of history available
+#'   \item Returns the requested number of days (or all available if less than requested)
+#' }
+#'
+#' @export
+#' @examples
+#' \dontrun{
+#' # Get 30 days of history for a specific expiration date
+#' hist_data <- opts_extract_hist(
+#'   expirDate = as.character('2024-09-20'),
+#'   hist_days = 30
+#' )
+#' 
+#' # Get 60 days of history for multiple expiration dates
+#' hist_data <- opts_extract_hist(
+#'   expirDate = c(as.character('2024-09-20'), as.character('2024-10-18')),
+#'   hist_days = 60
+#' )
+#' }
+opts_extract_hist <- function(expirDate, hist_days) {
+  # Validate parameters
+  if (missing(expirDate) || is.null(expirDate)) {
+    stop("expirDate parameter is required")
+  }
+  
+  if (missing(hist_days) || is.null(hist_days)) {
+    stop("hist_days parameter is required")
+  }
+  
+  if (!is.numeric(hist_days) || length(hist_days) != 1 || hist_days <= 0) {
+    stop("hist_days must be a positive integer")
+  }
+  
+  if (!is.character(expirDate)) {
+    stop("expirDate must be a character vector in 'YYYY-MM-DD' format")
+  }
+  
+  # Validate character format (YYYY-MM-DD) for each element
+  for (date in expirDate) {
+    if (!grepl("^\\d{4}-\\d{2}-\\d{2}$", date)) {
+      stop("All expirDate elements must be in 'YYYY-MM-DD' format as character strings")
+    }
+  }
+  
+  # Extract data using opts_extract_std()
+  options_data <- opts_extract_std(expirDate = expirDate)
+  
+  # Check if we got any data
+  if (nrow(options_data) == 0) {
+    message("No data found for the specified expiration dates")
+    return(options_data)
+  }
+  
+  # Sort by expirDate and tradeDate ascending
+  options_data <- options_data[order(options_data$expirDate, options_data$tradeDate), ]
+  
+  # Calculate available history for each expiration date
+  for (exp_date in unique(options_data$expirDate)) {
+    exp_data <- options_data[options_data$expirDate == exp_date, ]
+    available_days <- length(unique(exp_data$tradeDate))
+    
+    message(sprintf(
+      "Expiration date %s: %d days of history available",
+      exp_date, available_days
+    ))
+  }
+  
+  # Get unique trade dates for each expiration date and limit to hist_days
+  limited_data <- data.frame()
+  
+  for (exp_date in unique(options_data$expirDate)) {
+    exp_data <- options_data[options_data$expirDate == exp_date, ]
+    
+    # Get unique trade dates for this expiration date
+    unique_trade_dates <- unique(exp_data$tradeDate)
+    unique_trade_dates <- sort(unique_trade_dates)
+    
+    # Limit to hist_days (or all available if less)
+    if (length(unique_trade_dates) > hist_days) {
+      # Take the most recent hist_days
+      selected_dates <- tail(unique_trade_dates, hist_days)
+    } else {
+      # Take all available dates
+      selected_dates <- unique_trade_dates
+    }
+    
+    # Filter data to selected dates
+    exp_limited <- exp_data[exp_data$tradeDate %in% selected_dates, ]
+    limited_data <- rbind(limited_data, exp_limited)
+  }
+  
+  # Sort the final result by expirDate and tradeDate
+  limited_data <- limited_data[order(limited_data$expirDate, limited_data$tradeDate), ]
+  
+  # Report final result
+  total_days_returned <- length(unique(limited_data$tradeDate))
+  message(sprintf(
+    "Returning %d days of historical data across %d expiration date(s)",
+    total_days_returned, length(unique(limited_data$expirDate))
+  ))
+  
+  return(limited_data)
 }
 

@@ -4,7 +4,7 @@
 library(testthat)
 
 # Source the function
-source("../R/fct_vertical_spreads.R")
+source("R/fct_vertical_spreads.R")
 
 # Create comprehensive test data with multiple strikes and DTE
 create_comprehensive_test_data <- function() {
@@ -197,13 +197,17 @@ cat("---------------------------------------\n")
 large_test_data <- do.call(rbind, lapply(1:5, function(i) {
   transform(test_data, 
            expirDate = paste0("2024-", sprintf("%02d", 3+i), "-19"),
-           dte = 35L + i*7)
+           dte = as.integer(35L + i*7))
 }))
+
+# Get the actual DTE values from the large test data
+actual_dtes <- unique(large_test_data$dte)
+cat("Actual DTE values in large test data:", paste(actual_dtes, collapse = ", "), "\n")
 
 system.time({
   result7 <- create_vertical_spreads(
     optionsData = large_test_data,
-    dte = c(35, 42, 49, 56, 63),
+    dte = actual_dtes,
     dist = c(100, 200),
     callPos = "callAskPrice",
     putPos = "putAskPrice",

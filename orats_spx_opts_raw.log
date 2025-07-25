@@ -397,3 +397,158 @@ Backtrace:
  20.     └─cli::cli_abort(...)
  21.       └─rlang::abort(...)
 Execution halted
+Using libraries at paths:
+- /home/justinjtownsend/R/x86_64-pc-linux-gnu-library/4.3
+- /usr/local/lib/R/site-library
+- /usr/lib/R/site-library
+- /usr/lib/R/library
+The following objects are masked from .__Rprofile_env__. (pos = 3):
+
+    .Rprofile, print.__Rprofile__
+
+Using libraries at paths:
+- /home/justinjtownsend/R/x86_64-pc-linux-gnu-library/4.3
+- /usr/local/lib/R/site-library
+- /usr/lib/R/site-library
+- /usr/lib/R/library
+
+   Welcome to R!
+
+2025-05-17 02:00:01.80291 [INFO] Loading libraries
+Loading required package: DBI
+2025-05-17 02:00:02.102851 [INFO] Setting local DB options...
+2025-05-17 02:00:02.104463 [INFO] Setting remote data source options...
+2025-05-17 02:00:02.104697 [INFO] Getting most recent load date...
+2025-05-17 02:00:02.105563 [INFO] Fetching most recent load date from local DB...
+2025-05-17 02:00:02.105942 [INFO] Connecting to the local DB...
+2025-05-17 02:00:16.732919 [INFO] Determing business date ranges...
+2025-05-17 02:00:16.993919 [INFO] Fetching latest data from remote source...
+[1] "2025-05-17 02:00:17.972766: loading SPX, for 2025-05-09."
+Error in `purrr::map()`:
+ℹ In index: 1.
+Caused by error in `dir.create()`:
+! (converted from warning) cannot create dir '/home/justinjtownsend/data-raw/2025-05-09', reason 'No such file or directory'
+Backtrace:
+     ▆
+  1. ├─purrr::map(businessDts, ~orats.opts.hist(.x, token = orats.api.key, ticker = orats.ticker))
+  2. │ └─purrr:::map_("list", .x, .f, ..., .progress = .progress)
+  3. │   ├─purrr:::with_indexed_errors(...)
+  4. │   │ └─base::withCallingHandlers(...)
+  5. │   ├─purrr:::call_with_cleanup(...)
+  6. │   └─global .f(.x[[i]], ...)
+  7. │     └─global orats.opts.hist(.x, token = orats.api.key, ticker = orats.ticker)
+  8. │       └─base::dir.create(outDir)
+  9. ├─base::.signalSimpleWarning(...)
+ 10. │ └─base::withRestarts(...)
+ 11. │   └─base (local) withOneRestart(expr, restarts[[1L]])
+ 12. │     └─base (local) doWithOneRestart(return(expr), restart)
+ 13. └─base::.handleSimpleError(...)
+ 14.   └─purrr (local) h(simpleError(msg, call))
+ 15.     └─cli::cli_abort(...)
+ 16.       └─rlang::abort(...)
+Execution halted
+Using libraries at paths:
+- /home/justinjtownsend/R/x86_64-pc-linux-gnu-library/4.3
+- /usr/local/lib/R/site-library
+- /usr/lib/R/site-library
+- /usr/lib/R/library
+The following objects are masked from .__Rprofile_env__. (pos = 3):
+
+    .Rprofile, print.__Rprofile__
+
+Using libraries at paths:
+- /home/justinjtownsend/R/x86_64-pc-linux-gnu-library/4.3
+- /usr/local/lib/R/site-library
+- /usr/lib/R/site-library
+- /usr/lib/R/library
+
+   Welcome to R!
+
+2025-05-24 02:00:02.158702 [INFO] Loading libraries
+Loading required package: DBI
+2025-05-24 02:00:02.445142 [INFO] Setting local DB options...
+2025-05-24 02:00:02.446947 [INFO] Setting remote data source options...
+2025-05-24 02:00:02.447212 [INFO] Getting most recent load date...
+2025-05-24 02:00:02.448153 [INFO] Fetching most recent load date from local DB...
+2025-05-24 02:00:02.448529 [INFO] Connecting to the local DB...
+2025-05-24 02:00:28.789477 [INFO] Determing business date ranges...
+2025-05-24 02:00:29.298312 [INFO] Fetching latest data from remote source...
+[1] "2025-05-24 02:00:30.725987: loading SPX, for 2025-05-09."
+Error in `purrr::map()`:
+ℹ In index: 1.
+Caused by error in `dir.create()`:
+! (converted from warning) cannot create dir '/home/justinjtownsend/data-raw/2025-05-09', reason 'No such file or directory'
+Backtrace:
+     ▆
+  1. ├─purrr::map(businessDts, ~orats.opts.hist(.x, token = orats.api.key, ticker = orats.ticker))
+  2. │ └─purrr:::map_("list", .x, .f, ..., .progress = .progress)
+  3. │   ├─purrr:::with_indexed_errors(...)
+  4. │   │ └─base::withCallingHandlers(...)
+  5. │   ├─purrr:::call_with_cleanup(...)
+  6. │   └─global .f(.x[[i]], ...)
+  7. │     └─global orats.opts.hist(.x, token = orats.api.key, ticker = orats.ticker)
+  8. │       └─base::dir.create(outDir)
+  9. ├─base::.signalSimpleWarning(...)
+ 10. │ └─base::withRestarts(...)
+ 11. │   └─base (local) withOneRestart(expr, restarts[[1L]])
+ 12. │     └─base (local) doWithOneRestart(return(expr), restart)
+ 13. └─base::.handleSimpleError(...)
+ 14.   └─purrr (local) h(simpleError(msg, call))
+ 15.     └─cli::cli_abort(...)
+ 16.       └─rlang::abort(...)
+Execution halted
+Using libraries at paths:
+- /home/justinjtownsend/R/x86_64-pc-linux-gnu-library/4.3
+- /usr/local/lib/R/site-library
+- /usr/lib/R/site-library
+- /usr/lib/R/library
+The following objects are masked from .__Rprofile_env__. (pos = 3):
+
+    .Rprofile, print.__Rprofile__
+
+Using libraries at paths:
+- /home/justinjtownsend/R/x86_64-pc-linux-gnu-library/4.3
+- /usr/local/lib/R/site-library
+- /usr/lib/R/site-library
+- /usr/lib/R/library
+
+   Welcome to R!
+
+2025-06-20 02:00:01.834717 [INFO] Loading libraries
+Loading required package: DBI
+2025-06-20 02:00:02.303858 [INFO] Setting local DB options...
+2025-06-20 02:00:02.306678 [INFO] Setting remote data source options...
+2025-06-20 02:00:02.307083 [INFO] Getting most recent load date...
+2025-06-20 02:00:02.308664 [INFO] Fetching most recent load date from local DB...
+2025-06-20 02:00:02.309267 [INFO] Connecting to the local DB...
+2025-06-20 02:00:50.996447 [INFO] Determing business date ranges...
+2025-06-20 02:00:52.225972 [INFO] Fetching latest data from remote source...
+[1] "2025-06-20 02:00:57.361558: loading SPX, for 2025-05-09."
+Error in `purrr::map()`:
+ℹ In index: 1.
+Caused by error:
+! (converted from warning) Client error: (403) Forbidden https://api.orats.io/datav2/hist/strikes?token=e4204c89-daac-4464-a36c-f50f4796c76e&ticker=SPX&tradeDate=2025-05-09
+Backtrace:
+     ▆
+  1. ├─purrr::map(businessDts, ~orats.opts.hist(.x, token = orats.api.key, ticker = orats.ticker))
+  2. │ └─purrr:::map_("list", .x, .f, ..., .progress = .progress)
+  3. │   ├─purrr:::with_indexed_errors(...)
+  4. │   │ └─base::withCallingHandlers(...)
+  5. │   ├─purrr:::call_with_cleanup(...)
+  6. │   └─global .f(.x[[i]], ...)
+  7. │     └─global orats.opts.hist(.x, token = orats.api.key, ticker = orats.ticker)
+  8. │       ├─polite::scrape(session, content = "text/plain; charset=UTF-8")
+  9. │       │ ├─base::withVisible(eval(mc, parent.frame()))
+ 10. │       │ └─base::eval(mc, parent.frame())
+ 11. │       │   └─base::eval(mc, parent.frame())
+ 12. │       └─polite (local) `<fn>`(bow = session, content = "text/plain; charset=UTF-8")
+ 13. │         └─base::warning(...)
+ 14. ├─base::.signalSimpleWarning(...)
+ 15. │ └─base::withRestarts(...)
+ 16. │   └─base (local) withOneRestart(expr, restarts[[1L]])
+ 17. │     └─base (local) doWithOneRestart(return(expr), restart)
+ 18. └─base::.handleSimpleError(...)
+ 19.   └─purrr (local) h(simpleError(msg, call))
+ 20.     └─cli::cli_abort(...)
+ 21.       └─rlang::abort(...)
+Execution halted

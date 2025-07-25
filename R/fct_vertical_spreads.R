@@ -1,3 +1,41 @@
+#' Calculate Implied Volatility using Black-Scholes
+#'
+#' @param S Current stock price
+#' @param K Strike price
+#' @param T Time to expiration (in years)
+#' @param r Risk-free rate (default 0.02)
+#' @param option_price Option price (bid or ask)
+#' @param option_type "call" or "put"
+#' @return Implied volatility
+#' @keywords internal
+calculate_implied_volatility <- function(S, K, T, r = 0.02, option_price, option_type = "call") {
+  # Black-Scholes function
+  black_scholes <- function(S, K, T, r, sigma, option_type) {
+    d1 <- (log(S/K) + (r + sigma^2/2)*T) / (sigma*sqrt(T))
+    d2 <- d1 - sigma*sqrt(T)
+    
+    if (option_type == "call") {
+      price <- S*pnorm(d1) - K*exp(-r*T)*pnorm(d2)
+    } else {
+      price <- K*exp(-r*T)*pnorm(-d2) - S*pnorm(-d1)
+    }
+    return(price)
+  }
+  
+  # Objective function for optimization
+  objective <- function(sigma) {
+    return(abs(black_scholes(S, K, T, r, sigma, option_type) - option_price))
+  }
+  
+  # Use optimize to find implied volatility
+  tryCatch({
+    result <- optimize(objective, interval = c(0.01, 2.0))
+    return(result$minimum)
+  }, error = function(e) {
+    return(0.20)  # Default IV if calculation fails
+  })
+}
+
 #' Create Vertical Spreads from Options Data
 #'
 #' This function creates vertical spreads from options data based on specified parameters.
@@ -154,6 +192,67 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
                 bep <- strikeH - vsValue
               }
               
+              # Calculate moneyness (section 15)
+              stockPrice <- dte_data$stockPrice[1]  # Use first stock price for this DTE
+              moneyness <- "otm"  # Default
+              
+              if (strikeL < stockPrice && strikeH > stockPrice) {
+                moneyness <- "atm"
+              } else if (instrType == "c") {
+                if (strikeL < stockPrice && strikeH < stockPrice) {
+                  moneyness <- "itm"
+                } else if (strikeL > stockPrice && strikeH > stockPrice) {
+                  moneyness <- "otm"
+                }
+              } else if (instrType == "p") {
+                if (strikeL > stockPrice && strikeH > stockPrice) {
+                  moneyness <- "itm"
+                } else if (strikeL < stockPrice && strikeH < stockPrice) {
+                  moneyness <- "otm"
+                }
+              }
+              
+              # Calculate probability of profit (section 16)
+              prob_profit <- 0.5  # Default value
+              
+              # Try to calculate implied volatility from options prices
+              tryCatch({
+                # Calculate implied volatility for both legs using Black-Scholes
+                T <- days / 365  # Time to expiration in years
+                r <- 0.02  # Risk-free rate (2%)
+                
+                if (type %in% c("lcs", "scs")) {
+                  # Calculate IV for call options
+                  iv_l <- calculate_implied_volatility(stockPrice, strikeL, T, r, instrValL, "call")
+                  iv_h <- calculate_implied_volatility(stockPrice, strikeH, T, r, instrValH, "call")
+                } else {
+                  # Calculate IV for put options
+                  iv_l <- calculate_implied_volatility(stockPrice, strikeL, T, r, instrValL, "put")
+                  iv_h <- calculate_implied_volatility(stockPrice, strikeH, T, r, instrValH, "put")
+                }
+                
+                # Average IV from both legs
+                iv_avg <- (iv_l + iv_h) / 2
+                
+                # Calculate probability of profit using normal distribution
+                # Following the rules: NORM.DIST(bep, stockPrice, iv * sqrt(dte/365), TRUE)
+                time_factor <- sqrt(days / 365)
+                if (type %in% c("lcs", "lps")) {
+                  # Bull spreads: profit if stock > bep
+                  prob_profit <- 1 - pnorm(bep, stockPrice, iv_avg * stockPrice * time_factor)
+                } else {
+                  # Bear spreads: profit if stock < bep
+                  prob_profit <- pnorm(bep, stockPrice, iv_avg * stockPrice * time_factor)
+                }
+                
+                # Ensure probability is between 0 and 1
+                prob_profit <- max(0, min(1, prob_profit))
+                
+              }, error = function(e) {
+                # If IV calculation fails, use default probability
+                prob_profit <- 0.5
+              })
+              
               new_row <- data.frame(
                 dte = days,
                 vsType = type,
@@ -167,7 +266,11 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
                 posType = posType,
                 p_max = p_max,
                 bep = bep,
-                updated = Sys.time()
+                moneyness = moneyness,
+                prob_profit = prob_profit,
+                stockPrice = stockPrice,
+                updated = Sys.time(),
+                strat_type = "vs"
               )
               
               result <- rbind(result, new_row)
@@ -185,7 +288,7 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
   
   # Convert numeric columns
   numeric_cols <- c("vsValue", "instrValL", "instrValH", 
-                   "strikeL", "strikeH", "dist", "p_max", "bep")
+                   "strikeL", "strikeH", "dist", "p_max", "bep", "prob_profit", "stockPrice")
   for (col in numeric_cols) {
     result[[col]] <- as.numeric(result[[col]])
   }

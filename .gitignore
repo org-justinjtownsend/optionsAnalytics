@@ -17,3 +17,5 @@ privkey_name.pem
 *.Rprofvis
 /.quarto/
 optionsAnalytics_CursorContext.md
+.cursorignore
+/.cursor/
