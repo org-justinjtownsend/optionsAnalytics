@@ -17,6 +17,7 @@ Imports:
     jsonlite,
     plyr,
     quantmod,
+    reactable,
     shiny (>= 1.7.4),
     shinyWidgets
 Suggests: 
