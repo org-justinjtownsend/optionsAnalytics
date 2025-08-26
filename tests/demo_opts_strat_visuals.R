@@ -115,3 +115,6 @@ cat("1. Test with real database data\n")
 cat("2. Add more advanced features (sparklines, metrics)\n")
 cat("3. Integrate with the vertical spreads workflow\n")
 cat("4. Add to the options analytics pipeline\n")
+
+
+

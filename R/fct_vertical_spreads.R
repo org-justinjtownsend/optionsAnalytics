@@ -1,41 +1,3 @@
-#' Calculate Implied Volatility using Black-Scholes
-#'
-#' @param S Current stock price
-#' @param K Strike price
-#' @param T Time to expiration (in years)
-#' @param r Risk-free rate (default 0.02)
-#' @param option_price Option price (bid or ask)
-#' @param option_type "call" or "put"
-#' @return Implied volatility
-#' @keywords internal
-calculate_implied_volatility <- function(S, K, T, r = 0.02, option_price, option_type = "call") {
-  # Black-Scholes function
-  black_scholes <- function(S, K, T, r, sigma, option_type) {
-    d1 <- (log(S/K) + (r + sigma^2/2)*T) / (sigma*sqrt(T))
-    d2 <- d1 - sigma*sqrt(T)
-    
-    if (option_type == "call") {
-      price <- S*pnorm(d1) - K*exp(-r*T)*pnorm(d2)
-    } else {
-      price <- K*exp(-r*T)*pnorm(-d2) - S*pnorm(-d1)
-    }
-    return(price)
-  }
-  
-  # Objective function for optimization
-  objective <- function(sigma) {
-    return(abs(black_scholes(S, K, T, r, sigma, option_type) - option_price))
-  }
-  
-  # Use optimize to find implied volatility
-  tryCatch({
-    result <- optimize(objective, interval = c(0.01, 2.0))
-    return(result$minimum)
-  }, error = function(e) {
-    return(0.20)  # Default IV if calculation fails
-  })
-}
-
 #' Create Vertical Spreads from Options Data
 #'
 #' This function creates vertical spreads from options data based on specified parameters.
@@ -54,17 +16,20 @@ calculate_implied_volatility <- function(S, K, T, r = 0.02, option_price, option
 #'   - callAskPrice: numeric
 #'   - putBidPrice: numeric
 #'   - putAskPrice: numeric
+#'   - callMidIv: numeric
+#'   - putMidIv: numeric
 #' @param dte Integer or vector of integers specifying days to expiry
 #' @param dist Integer or vector of integers specifying the exact range between strike prices
-#' @param callPos Integer or character specifying the column position/name for call prices
-#' @param putPos Integer or character specifying the column position/name for put prices
 #' @param vsType Character vector specifying vertical spread type(s): "lcs", "scs", "lps", "sps"
+#' @param callPos Optional column position/name for call prices (required for lcs, scs)
+#' @param putPos Optional column position/name for put prices (required for lps, sps)
 #' @param output_file Optional path to save results as CSV
 #' @return A named list containing:
 #'   - optionsData: Original input data frame
-#'   - vsData: Data frame containing vertical spread information
+#'   - vsData_h: Data frame containing detailed vertical spread information
+#'   - vsData_s: Summary data frame with aggregated vertical spread information
 #' @export
-create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsType, output_file = NULL) {
+create_vertical_spreads <- function(optionsData, dte, dist, vsType, callPos = NULL, putPos = NULL, output_file = NULL) {
   # Input validation
   if (!is.data.frame(optionsData)) {
     stop("optionsData must be a data frame")
@@ -73,7 +38,7 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
   # Validate required columns
   required_cols <- c("ticker", "tradeDate", "expirDate", "dte", "strike", 
                     "stockPrice", "spotPrice", "callBidPrice", "callAskPrice",
-                    "putBidPrice", "putAskPrice")
+                    "putBidPrice", "putAskPrice", "callMidIv", "putMidIv")
   if (!all(required_cols %in% names(optionsData))) {
     stop("Missing required columns in optionsData")
   }
@@ -89,7 +54,7 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
   
   # Validate numeric fields are non-negative
   numeric_cols <- c("strike", "stockPrice", "spotPrice", "callBidPrice", 
-                   "callAskPrice", "putBidPrice", "putAskPrice")
+                   "callAskPrice", "putBidPrice", "putAskPrice", "callMidIv", "putMidIv")
   for (col in numeric_cols) {
     if (any(optionsData[[col]] < 0, na.rm = TRUE)) {
       stop(paste(col, "must be non-negative"))
@@ -110,21 +75,40 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
     stop("vsType must be one of: 'lcs', 'scs', 'lps', 'sps'")
   }
   
+  # Validate callPos and putPos based on vsType
+  if (any(vsType %in% c("lcs", "scs")) && is.null(callPos)) {
+    stop("callPos must be provided for vsType in (lcs, scs)")
+  }
+  if (any(vsType %in% c("lps", "sps")) && is.null(putPos)) {
+    stop("putPos must be provided for vsType in (lps, sps)")
+  }
+  
   # Convert column positions to names if needed
-  if (is.numeric(callPos)) callPos <- names(optionsData)[callPos]
-  if (is.numeric(putPos)) putPos <- names(optionsData)[putPos]
+  if (!is.null(callPos) && is.numeric(callPos)) callPos <- names(optionsData)[callPos]
+  if (!is.null(putPos) && is.numeric(putPos)) putPos <- names(optionsData)[putPos]
   
-  # Validate price columns
-  if (!all(c(callPos, putPos) %in% names(optionsData))) {
-    stop("Specified price columns not found in optionsData")
+  # Validate price columns exist and contain numeric values
+  if (!is.null(callPos)) {
+    if (!callPos %in% names(optionsData)) {
+      stop("callPos column not found in optionsData")
+    }
+    if (!is.numeric(optionsData[[callPos]])) {
+      stop("callPos column must contain numeric values")
+    }
   }
   
-  if (!all(sapply(optionsData[, c(callPos, putPos)], is.numeric))) {
-    stop("Price columns must contain numeric values")
+  if (!is.null(putPos)) {
+    if (!putPos %in% names(optionsData)) {
+      stop("putPos column not found in optionsData")
+    }
+    if (!is.numeric(optionsData[[putPos]])) {
+      stop("putPos column must contain numeric values")
+    }
   }
   
-  # Initialize empty result data frame
-  result <- data.frame()
+  # Initialize container for result rows to avoid rbind name/type mismatches
+  result_rows <- list()
+  result_count <- 0
   
   # Process each dte value
   for (days in dte) {
@@ -136,144 +120,181 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
       next
     }
     
-    # Process each dist value for current dte
-    for (dist_val in dist) {
-      # Find valid strike pairs for current dist
-      for (i in 1:(nrow(dte_data)-1)) {
-        for (j in (i+1):nrow(dte_data)) {
-          strike_diff <- abs(dte_data$strike[j] - dte_data$strike[i])
-          if (strike_diff == dist_val) {
-            # Mark strike types
-            strikeL <- min(dte_data$strike[i], dte_data$strike[j])
-            strikeH <- max(dte_data$strike[i], dte_data$strike[j])
-            
-            # Create new row for each spread type
-            for (type in vsType) {
-              # Determine instrument type and position type
-              instrType <- ifelse(type %in% c("lcs", "scs"), "c", "p")
-              posType <- ifelse(type %in% c("scs", "sps"), "cr_s", "dr_s")
+    # Ensure we only pair strikes within the same expiration date
+    unique_expiries <- unique(dte_data$expirDate)
+    for (exp_date in unique_expiries) {
+      ed_data <- dte_data[dte_data$expirDate == exp_date, ]
+      if (nrow(ed_data) < 2) next
+      
+      # Process each dist value for current dte and expiration
+      for (dist_val in dist) {
+        # Find valid strike pairs for current dist
+        for (i in 1:(nrow(ed_data)-1)) {
+          for (j in (i+1):nrow(ed_data)) {
+            strike_diff <- abs(ed_data$strike[j] - ed_data$strike[i])
+            if (strike_diff == dist_val) {
+              # Mark strike types
+              strikeL <- min(ed_data$strike[i], ed_data$strike[j])
+              strikeH <- max(ed_data$strike[i], ed_data$strike[j])
               
-              # Calculate vsValue based on spread type
-              vsValue <- 0
-              instrValL <- 0
-              instrValH <- 0
-              
-              if (type %in% c("lcs", "scs")) {
-                instrValL <- dte_data[i, callPos]
-                instrValH <- dte_data[j, callPos]
-                if (type == "lcs") {
-                  vsValue <- instrValL - instrValH
-                } else {  # scs
-                  vsValue <- instrValH - instrValL
-                }
-              } else {  # lps or sps
-                instrValL <- dte_data[i, putPos]
-                instrValH <- dte_data[j, putPos]
-                if (type == "lps") {
-                  vsValue <- instrValH - instrValL
-                } else {  # sps
-                  vsValue <- instrValL - instrValH
-                }
-              }
-              
-              # Calculate p_max based on spread type
-              p_max <- 0
-              if (type %in% c("lcs", "lps")) {
-                p_max <- dist_val - vsValue
-              } else {  # scs or sps
-                p_max <- vsValue
-              }
-              
-              # Calculate bep based on spread type
-              bep <- 0
-              if (type %in% c("lcs", "scs")) {
-                bep <- strikeL + vsValue
-              } else {  # lps or sps
-                bep <- strikeH - vsValue
-              }
-              
-              # Calculate moneyness (section 15)
-              stockPrice <- dte_data$stockPrice[1]  # Use first stock price for this DTE
-              moneyness <- "otm"  # Default
-              
-              if (strikeL < stockPrice && strikeH > stockPrice) {
-                moneyness <- "atm"
-              } else if (instrType == "c") {
-                if (strikeL < stockPrice && strikeH < stockPrice) {
-                  moneyness <- "itm"
-                } else if (strikeL > stockPrice && strikeH > stockPrice) {
-                  moneyness <- "otm"
-                }
-              } else if (instrType == "p") {
-                if (strikeL > stockPrice && strikeH > stockPrice) {
-                  moneyness <- "itm"
-                } else if (strikeL < stockPrice && strikeH < stockPrice) {
-                  moneyness <- "otm"
-                }
-              }
-              
-              # Calculate probability of profit (section 16)
-              prob_profit <- 0.5  # Default value
-              
-              # Try to calculate implied volatility from options prices
-              tryCatch({
-                # Calculate implied volatility for both legs using Black-Scholes
-                T <- days / 365  # Time to expiration in years
-                r <- 0.02  # Risk-free rate (2%)
+              # Create new row for each spread type
+              for (type in vsType) {
+                # Determine instrument type and position type
+                instrType <- ifelse(type %in% c("lcs", "scs"), "c", "p")
+                posType <- ifelse(type %in% c("scs", "sps"), "cr_s", "dr_s")
+                
+                # Calculate vsValue based on spread type
+                vsValue <- 0
+                instrValL <- 0
+                instrValH <- 0
                 
                 if (type %in% c("lcs", "scs")) {
-                  # Calculate IV for call options
-                  iv_l <- calculate_implied_volatility(stockPrice, strikeL, T, r, instrValL, "call")
-                  iv_h <- calculate_implied_volatility(stockPrice, strikeH, T, r, instrValH, "call")
-                } else {
-                  # Calculate IV for put options
-                  iv_l <- calculate_implied_volatility(stockPrice, strikeL, T, r, instrValL, "put")
-                  iv_h <- calculate_implied_volatility(stockPrice, strikeH, T, r, instrValH, "put")
+                  instrValL <- as.numeric(ed_data[[callPos]][i])
+                  instrValH <- as.numeric(ed_data[[callPos]][j])
+                  if (type == "lcs") {
+                    vsValue <- instrValL - instrValH
+                  } else {  # scs
+                    vsValue <- instrValH - instrValL
+                  }
+                } else {  # lps or sps
+                  instrValL <- as.numeric(ed_data[[putPos]][i])
+                  instrValH <- as.numeric(ed_data[[putPos]][j])
+                  if (type == "lps") {
+                    vsValue <- instrValH - instrValL
+                  } else {  # sps
+                    vsValue <- instrValL - instrValH
+                  }
                 }
                 
-                # Average IV from both legs
-                iv_avg <- (iv_l + iv_h) / 2
-                
-                # Calculate probability of profit using normal distribution
-                # Following the rules: NORM.DIST(bep, stockPrice, iv * sqrt(dte/365), TRUE)
-                time_factor <- sqrt(days / 365)
+                # Calculate p_max based on spread type
+                p_max <- 0
                 if (type %in% c("lcs", "lps")) {
-                  # Bull spreads: profit if stock > bep
-                  prob_profit <- 1 - pnorm(bep, stockPrice, iv_avg * stockPrice * time_factor)
-                } else {
-                  # Bear spreads: profit if stock < bep
-                  prob_profit <- pnorm(bep, stockPrice, iv_avg * stockPrice * time_factor)
+                  p_max <- dist_val - vsValue
+                } else {  # scs or sps
+                  p_max <- vsValue
                 }
                 
-                # Ensure probability is between 0 and 1
-                prob_profit <- max(0, min(1, prob_profit))
+                # Calculate bep based on spread type
+                bep <- 0
+                if (type %in% c("lcs", "scs")) {
+                  bep <- strikeL + vsValue
+                } else {  # lps or sps
+                  bep <- strikeH - vsValue
+                }
                 
-              }, error = function(e) {
-                # If IV calculation fails, use default probability
-                prob_profit <- 0.5
-              })
-              
-              new_row <- data.frame(
-                dte = days,
-                vsType = type,
-                vsValue = vsValue,
-                instrValL = instrValL,
-                instrValH = instrValH,
-                strikeL = strikeL,
-                strikeH = strikeH,
-                dist = dist_val,
-                instrType = instrType,
-                posType = posType,
-                p_max = p_max,
-                bep = bep,
-                moneyness = moneyness,
-                prob_profit = prob_profit,
-                stockPrice = stockPrice,
-                updated = Sys.time(),
-                strat_type = "vs"
-              )
-              
-              result <- rbind(result, new_row)
+                # Calculate moneyness
+                stockPrice <- ed_data$stockPrice[1]  # Use first stock price for this expirDate
+                moneyness <- "otm"  # Default
+                
+                if (strikeL < stockPrice && strikeH > stockPrice) {
+                  moneyness <- "atm"
+                } else if (instrType == "c") {
+                  if (strikeL < stockPrice && strikeH < stockPrice) {
+                    moneyness <- "itm"
+                  } else if (strikeL > stockPrice && strikeH > stockPrice) {
+                    moneyness <- "otm"
+                  }
+                } else if (instrType == "p") {
+                  if (strikeL > stockPrice && strikeH > stockPrice) {
+                    moneyness <- "itm"
+                  } else if (strikeL < stockPrice && strikeH < stockPrice) {
+                    moneyness <- "otm"
+                  }
+                }
+                
+                # Calculate probability of profit using implied volatility from options data
+                prob_profit <- 0.5  # Default value
+                iv_pp <- 0.20  # Default IV value
+                
+                tryCatch({
+                  # Get implied volatility from options data
+                  if (type %in% c("lcs", "scs")) {
+                    # Use callMidIv for call spreads
+                    iv_l <- ed_data$callMidIv[i]
+                    iv_h <- ed_data$callMidIv[j]
+                  } else {
+                    # Use putMidIv for put spreads
+                    iv_l <- ed_data$putMidIv[i]
+                    iv_h <- ed_data$putMidIv[j]
+                  }
+                  
+                  # Check if IV values are valid
+                  if (!is.na(iv_l) && !is.na(iv_h) && iv_l > 0 && iv_h > 0) {
+                    # Average IV from both legs
+                    iv_avg <- (iv_l + iv_h) / 2
+                    iv_pp <- iv_avg
+                  } else {
+                    # Use default IV if not available
+                    iv_pp <- 0.20
+                  }
+                  
+                  # Calculate probability of profit using normal distribution
+                  # Following the rules: pnorm(bep, stockPrice, iv * sqrt(dte/365), TRUE)
+                  time_factor <- sqrt(days / 365)
+                  if (type %in% c("lcs", "lps")) {
+                    # Bull spreads: profit if stock > bep
+                    prob_profit <- 1 - pnorm(bep, stockPrice, iv_pp * stockPrice * time_factor, TRUE)
+                  } else {
+                    # Bear spreads: profit if stock < bep
+                    prob_profit <- pnorm(bep, stockPrice, iv_pp * stockPrice * time_factor, TRUE)
+                  }
+                  
+                  # Ensure probability is between 0 and 1
+                  prob_profit <- max(0, min(1, prob_profit))
+                  
+                }, error = function(e) {
+                  # If calculation fails, use default probability
+                  prob_profit <- 0.5
+                })
+                
+                # Get ticker and tradeDate from the data
+                ticker <- ed_data$ticker[1]
+                tradeDate <- ed_data$tradeDate[1]
+                
+                # Create leg1_instrument and leg2_instrument based on vsType
+                if (type %in% c("lcs", "scs")) {
+                  # For call spreads, leg1 is always the lower strike
+                  leg1_instrument <- paste0(ticker, strikeL, instrType, exp_date)
+                  leg2_instrument <- paste0(ticker, strikeH, instrType, exp_date)
+                } else {
+                  # For put spreads, leg1 is always the higher strike
+                  leg1_instrument <- paste0(ticker, strikeH, instrType, exp_date)
+                  leg2_instrument <- paste0(ticker, strikeL, instrType, exp_date)
+                }
+                
+                # Create spread_id
+                spread_id <- paste0(leg1_instrument, "_", leg2_instrument)
+                
+                new_row <- data.frame(
+                  expirDate = exp_date,
+                  dte = days,
+                  dist = dist_val,
+                  vsType = type,
+                  instrType = instrType,
+                  posType = posType,
+                  vsValue = vsValue,
+                  strikeL = strikeL,
+                  strikeH = strikeH,
+                  instrValL = instrValL,
+                  instrValH = instrValH,
+                  leg1_instrument = leg1_instrument,
+                  leg2_instrument = leg2_instrument,
+                  spread_id = spread_id,
+                  ticker = ticker,
+                  p_max = p_max,
+                  bep = bep,
+                  moneyness = moneyness,
+                  prob_profit = prob_profit,
+                  iv_pp = iv_pp,
+                  tradeDate = tradeDate,
+                  updated = Sys.time(),
+                  strat_type = "vs"
+                )
+                
+                # Append to list
+                result_count <- result_count + 1
+                result_rows[[result_count]] <- new_row
+              }
             }
           }
         }
@@ -281,22 +302,41 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
     }
   }
   
-  if (nrow(result) == 0) {
+  # Bind all rows
+  vsData_h <- dplyr::bind_rows(result_rows)
+  
+  if (is.null(vsData_h) || nrow(vsData_h) == 0) {
     warning("No valid vertical spreads found")
-    return(list(optionsData = optionsData, vsData = NULL))
+    return(list(optionsData = optionsData, vsData_h = NULL, vsData_s = NULL))
   }
   
   # Convert numeric columns
   numeric_cols <- c("vsValue", "instrValL", "instrValH", 
-                   "strikeL", "strikeH", "dist", "p_max", "bep", "prob_profit", "stockPrice")
-  for (col in numeric_cols) {
-    result[[col]] <- as.numeric(result[[col]])
+                   "strikeL", "strikeH", "dist", "p_max", "bep", "prob_profit")
+  present_cols <- intersect(numeric_cols, names(vsData_h))
+  for (col in present_cols) {
+    vsData_h[[col]] <- as.numeric(vsData_h[[col]])
   }
+  
+  # Create summary data frame (vsData_s) as specified in Step 12
+  vsData_s <- vsData_h %>%
+    dplyr::group_by(spread_id) %>%
+    dplyr::summarise(
+      tradeDate_latest = max(tradeDate, na.rm = TRUE),
+      dte = first(dte),
+      vsType = first(vsType),
+      instrType = first(instrType),
+      posType = first(posType),
+      moneyness = first(moneyness),
+      vsValue = list(vsValue),
+      iv_pp = list(iv_pp),
+      .groups = "drop"
+    )
   
   # Save to CSV if output_file is specified
   if (!is.null(output_file)) {
     tryCatch({
-      write.csv(result, output_file, row.names = FALSE)
+      write.csv(vsData_h, output_file, row.names = FALSE)
       message(sprintf("Results saved to %s", output_file))
     }, error = function(e) {
       warning(sprintf("Failed to save results to %s: %s", output_file, e$message))
@@ -306,6 +346,7 @@ create_vertical_spreads <- function(optionsData, dte, dist, callPos, putPos, vsT
   # Return named list with original data and results
   return(list(
     optionsData = optionsData,
-    vsData = result
+    vsData_h = vsData_h,
+    vsData_s = vsData_s
   ))
-} 
+}

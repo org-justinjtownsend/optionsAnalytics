@@ -4,18 +4,18 @@ devtools::install_github("cran/fOptions")
 library(OptionsAnalytics)
 library(fOptions)
 
-source("R/fct_helpers.R")
+source("R/fct_opts_helpers.R")
 
 initiate_ig_session(env = "LIVE")
-epic <- "OP.D.SPX5.5700C.IP"
+epic <- "OP.D.SPX1.6400C.IP"
 epic_dtls <- as.data.frame(get_option_details(epic))
 
 instrument <- "SPX"
-expiry_range <- seq(1, 7)
+expiry <- seq(1, 7)
 
 seq_res <- opts_instrument_ig(
   instrument = instrument,
-  expiry_range = expiry_range
+  expiry = expiry
 )
 
 # A short term work around is to use the tickers inside the 3SD move for next
